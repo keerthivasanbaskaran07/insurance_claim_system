@@ -1,0 +1,410 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>My Policies</title>
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+font-family:'DM Sans',sans-serif;
+background:#0a1628;
+color:white;
+margin:0;
+}
+
+.container{
+padding:40px;
+max-width:1200px;
+margin:auto;
+}
+
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:30px;
+}
+
+h1{
+font-family:'DM Serif Display',serif;
+margin:0;
+}
+
+.btn{
+background:#1a6ef5;
+border:none;
+padding:10px 18px;
+border-radius:6px;
+color:white;
+font-weight:600;
+cursor:pointer;
+text-decoration:none;
+transition: all 0.3s ease;
+display: inline-flex;
+align-items: center;
+}
+
+.btn:hover{
+background:#3d8bff;
+transform: translateY(-2px);
+box-shadow: 0 4px 12px rgba(26, 110, 245, 0.3);
+}
+
+.btn-back {
+background: #2a3441;
+margin-right: 10px;
+position: relative;
+overflow: hidden;
+gap: 6px;
+z-index: 1;
+}
+
+.btn-back::after {
+content: '';
+position: absolute;
+top: 0;
+left: -100%;
+width: 50%;
+height: 100%;
+background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+transform: skewX(-20deg);
+transition: all 0.6s ease;
+z-index: -1;
+}
+
+.btn-back:hover {
+background: #3e4a5c;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.btn-back:hover::after {
+left: 150%;
+}
+
+.btn-back .back-icon {
+display: inline-block;
+transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-back:hover .back-icon {
+transform: translateX(-4px) scale(1.1);
+}
+
+.table-container{
+background:rgba(255,255,255,0.04);
+border-radius:10px;
+overflow:hidden;
+border:1px solid rgba(255,255,255,0.08);
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+padding:14px;
+text-align:left;
+font-size:14px;
+}
+
+th{
+background:rgba(255,255,255,0.06);
+color:#7a8ba8;
+font-size:12px;
+letter-spacing:1px;
+}
+
+tr{
+border-bottom:1px solid rgba(255,255,255,0.06);
+}
+
+tr:hover{
+background:rgba(255,255,255,0.04);
+}
+
+.badge{
+padding:4px 10px;
+border-radius:100px;
+font-size:12px;
+font-weight:600;
+display:inline-block;
+}
+
+/* STATUS COLORS */
+
+.badge.active{
+background:rgba(0,198,100,0.15);
+color:#00c664;
+}
+
+.badge.lapsed{
+background:rgba(255,90,90,0.15);
+color:#ff5a5a;
+}
+
+.badge.expired{
+background:rgba(255,255,255,0.1);
+color:#aaa;
+}
+
+.badge.type{
+background:rgba(26,110,245,0.12);
+color:#3d8bff;
+}
+
+.badge.approved{
+background:rgba(0,198,100,0.15);
+color:#00c664;
+border: 1px solid rgba(0,198,100,0.3);
+}
+
+.badge.rejected{
+background:rgba(255,90,90,0.15);
+color:#ff5a5a;
+border: 1px solid rgba(255,90,90,0.3);
+}
+
+.badge.pending{
+background:rgba(255,193,7,0.15);
+color:#ffd32a;
+border: 1px solid rgba(255,193,7,0.3);
+}
+
+/* Glassy Status Buttons mirroring View/Edit style */
+.btn-status {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.04);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-status-approve {
+    border: 1px solid rgba(0, 198, 100, 0.3);
+    color: #00c664 !important;
+}
+.btn-status-approve:hover {
+    background: rgba(0, 198, 100, 0.15);
+    border-color: #00c664;
+    transform: translateY(-2px);
+}
+
+.btn-status-reject {
+    border: 1px solid rgba(255, 90, 90, 0.3);
+    color: #ff5a5a !important;
+}
+.btn-status-reject:hover {
+    background: rgba(255, 90, 90, 0.15);
+    border-color: #ff5a5a;
+    transform: translateY(-2px);
+}
+
+.btn-status-pending {
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    color: #ffd32a !important;
+}
+.btn-status-pending:hover {
+    background: rgba(255, 193, 7, 0.15);
+    border-color: #ffd32a;
+    transform: translateY(-2px);
+}
+
+.action-form { display: inline; }
+
+.action-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.button-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.action-btn{
+padding:6px 12px;
+border-radius:6px;
+border:1px solid rgba(255,255,255,0.1);
+background:rgba(255,255,255,0.04);
+color:white;
+text-decoration:none;
+font-size:12px;
+margin-right:5px;
+}
+
+.action-btn:hover{
+background:rgba(255,255,255,0.08);
+}
+
+.empty{
+text-align:center;
+padding:40px;
+color:#9aa9c7;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+<h1>My Policies</h1>
+
+<div>
+{% if request.user.is_superuser or request.user.role == "admin" %}
+<a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-back">
+{% elif request.user.role == "staff" %}
+<a href="{% url 'accounts:staff_dashboard' %}" class="btn btn-back">
+{% else %}
+<a href="{% url 'accounts:policyholder_dashboard' %}" class="btn btn-back">
+{% endif %}
+<span class="back-icon">←</span> Back to Dashboard
+</a>
+
+<a href="{% url 'policy:create' %}" class="btn">
++ Create Policy
+</a>
+</div>
+
+</div>
+
+<div class="table-container">
+
+<table>
+
+<thead>
+<tr>
+
+<th>Policy Number</th>
+<th>Type</th>
+<th>Insurer</th>
+<th>Sum Insured</th>
+<th>Premium</th>
+<th>Expiry Date</th>
+<th>Status</th>
+<th>Actions</th>
+
+</tr>
+</thead>
+
+<tbody>
+
+{% for policy in policies %}
+
+<tr>
+
+<td>
+<strong>{{ policy.policy_number }}</strong>
+</td>
+
+<td>
+<span class="badge type">
+{{ policy.policy_type|default:"General" }}
+</span>
+</td>
+
+<td>
+{{ policy.insurer_name|default:"-" }}
+</td>
+
+<td>
+₹{{ policy.sum_insured|default:0 }}
+</td>
+
+<td>
+₹{{ policy.total_premium|default:0 }}
+</td>
+
+<td>
+{{ policy.end_date|date:"d M Y" }}
+</td>
+
+<td>
+
+<span class="badge {{ policy.status }}">
+{{ policy.status|capfirst }}
+</span>
+
+</td>
+
+<td>
+
+<div class="action-group">
+    <!-- Navigation Actions -->
+    <div class="button-row">
+        <a href="{% url 'policy:detail' policy.id %}" class="action-btn">
+            View
+        </a>
+        <a href="{% url 'policy:edit' policy.id %}" class="action-btn">
+            Edit
+        </a>
+    </div>
+
+    <!-- Status Change Actions (Admin Only) -->
+    {% if request.user.is_superuser %}
+    <div class="button-row">
+        <form method="POST" action="{% url 'policy:update_status' policy.id %}" class="action-form">
+            {% csrf_token %}
+            <input type="hidden" name="status" value="approved">
+            <button type="submit" class="btn-status btn-status-approve">Approve</button>
+        </form>
+        
+        <form method="POST" action="{% url 'policy:update_status' policy.id %}" class="action-form">
+            {% csrf_token %}
+            <input type="hidden" name="status" value="rejected">
+            <button type="submit" class="btn-status btn-status-reject">Reject</button>
+        </form>
+        
+        <form method="POST" action="{% url 'policy:update_status' policy.id %}" class="action-form">
+            {% csrf_token %}
+            <input type="hidden" name="status" value="pending">
+            <button type="submit" class="btn-status btn-status-pending">Pending</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+<td colspan="8" class="empty">
+No policies available
+</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</body>
+</html>

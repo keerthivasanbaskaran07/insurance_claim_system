@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}My Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+<!-- HEADER -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div>
+<h3>Welcome {{ request.user.username }}</h3>
+<p class="text-muted">Your Insurance Dashboard</p>
+</div>
+
+<a href="{% url 'claim:create' %}" class="btn btn-dark">
+File Claim
+</a>
+
+</div>
+
+
+<!-- KPI CARDS -->
+
+<div class="row g-3 mb-4">
+
+<div class="col-md-3">
+<div class="card shadow-sm">
+<div class="card-body">
+<h6 class="text-muted">My Policies</h6>
+<h3>{{ kpi.total_policies }}</h3>
+<p class="text-muted small">{{ kpi.active_policies }} active</p>
+</div>
+</div>
+</div>
+
+
+<div class="col-md-3">
+<div class="card shadow-sm">
+<div class="card-body">
+<h6 class="text-muted">Total Claims</h6>
+<h3>{{ kpi.total_claims }}</h3>
+<p class="text-muted small">{{ kpi.open_claims }} in progress</p>
+</div>
+</div>
+</div>
+
+
+<div class="col-md-3">
+<div class="card shadow-sm">
+<div class="card-body">
+<h6 class="text-muted">Total Sum Insured</h6>
+<h4>₹{{ kpi.total_sum_insured|default:0|intcomma }}</h4>
+</div>
+</div>
+</div>
+
+
+<div class="col-md-3">
+<div class="card shadow-sm">
+<div class="card-body">
+<h6 class="text-muted">Total Settled</h6>
+<h4 class="text-success">₹{{ kpi.total_settled|default:0|intcomma }}</h4>
+</div>
+</div>
+</div>
+
+</div>
+
+
+<!-- EXPIRING POLICY ALERT -->
+
+{% if expiring_policies %}
+
+<div class="alert alert-warning">
+
+<strong>Expiring Policies</strong>
+
+<ul class="mb-0">
+
+{% for policy in expiring_policies %}
+<li>
+Policy {{ policy.policy_number }} expires in {{ policy.days_left }} days
+</li>
+{% endfor %}
+
+</ul>
+
+</div>
+
+{% endif %}
+
+
+<!-- POLICIES TABLE -->
+
+<div class="card shadow-sm mb-4">
+
+<div class="card-header">
+<h5>My Policies</h5>
+</div>
+
+<div class="card-body">
+
+<table class="table table-bordered table-hover">
+
+<thead>
+<tr>
+<th>Policy Number</th>
+<th>Type</th>
+<th>Sum Insured</th>
+<th>Premium</th>
+<th>Expiry</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for policy in policies %}
+
+<tr>
+
+<td>{{ policy.policy_number }}</td>
+<td>{{ policy.policy_type|default:"General" }}</td>
+<td>₹{{ policy.sum_insured|default:0|intcomma }}</td>
+<td>₹{{ policy.premium_amount|default:0|intcomma }}</td>
+<td>{{ policy.end_date }}</td>
+
+<td>
+
+<span class="badge
+{% if policy.status == 'active' %}
+bg-success
+{% elif policy.status == 'expired' %}
+bg-danger
+{% else %}
+bg-secondary
+{% endif %}
+">
+
+{{ policy.status }}
+
+</span>
+
+</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+<td colspan="6" class="text-center">No policies found</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<!-- CLAIM STATUS SUMMARY -->
+
+<div class="card shadow-sm mb-4">
+
+<div class="card-header">
+<h5>Claim Status Summary</h5>
+</div>
+
+<div class="card-body">
+
+{% for item in claim_status_summary %}
+
+<div class="mb-2">
+
+<div class="d-flex justify-content-between">
+<span>{{ item.label }}</span>
+<span>{{ item.count }}</span>
+</div>
+
+<div class="progress">
+
+<div class="progress-bar {{ item.bar_class }}"
+style="width: {{ item.percentage|default:0 }}%">
+</div>
+
+</div>
+
+</div>
+
+{% empty %}
+
+<p class="text-muted">No claims yet</p>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+
+<!-- RECENT CLAIMS -->
+
+<div class="card shadow-sm mb-4">
+
+<div class="card-header">
+<h5>Recent Claims</h5>
+</div>
+
+<div class="card-body">
+
+<table class="table table-bordered table-hover">
+
+<thead>
+<tr>
+<th>Claim No</th>
+<th>Policy</th>
+<th>Type</th>
+<th>Claimed</th>
+<th>Approved</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for claim in recent_claims %}
+
+<tr>
+
+<td>{{ claim.claim_number }}</td>
+
+<td>{{ claim.policy.policy_number }}</td>
+
+<td>{{ claim.claim_type }}</td>
+
+<td>₹{{ claim.claimed_amount|default:0|intcomma }}</td>
+
+<td>
+{% if claim.approved_amount %}
+₹{{ claim.approved_amount|intcomma }}
+{% else %}
+-
+{% endif %}
+</td>
+
+<td>
+
+<span class="badge
+{% if claim.status == 'submitted' %}
+bg-primary
+{% elif claim.status == 'under_review' %}
+bg-warning
+{% elif claim.status == 'approved' %}
+bg-success
+{% elif claim.status == 'rejected' %}
+bg-danger
+{% else %}
+bg-secondary
+{% endif %}
+">
+
+{{ claim.status }}
+
+</span>
+
+</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+<td colspan="6" class="text-center">No claims found</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<!-- SETTLEMENT HISTORY -->
+
+<div class="card shadow-sm">
+
+<div class="card-header">
+<h5>Settlement History</h5>
+</div>
+
+<div class="card-body">
+
+<table class="table table-bordered table-hover">
+
+<thead>
+<tr>
+<th>Claim Number</th>
+<th>Claimed</th>
+<th>Approved</th>
+<th>Settled Amount</th>
+<th>Date</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for claim in settled_claims %}
+
+<tr>
+
+<td>{{ claim.claim_number }}</td>
+
+<td>₹{{ claim.claimed_amount|default:0|intcomma }}</td>
+
+<td>₹{{ claim.approved_amount|default:0|intcomma }}</td>
+
+<td class="text-success fw-bold">
+
+{% if claim.settlement %}
+₹{{ claim.settlement.settled_amount|intcomma }}
+{% else %}
+-
+{% endif %}
+
+</td>
+
+<td>
+
+{% if claim.settlement %}
+{{ claim.settlement.settlement_date }}
+{% else %}
+-
+{% endif %}
+
+</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+<td colspan="5" class="text-center">No settled claims</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

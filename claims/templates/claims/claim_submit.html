@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Submit Claim{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Animated Back Button styling */
+.btn-back-animated {
+    background: #2a3441;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    gap: 6px;
+    z-index: 1;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-back-animated::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transform: skewX(-20deg);
+    transition: all 0.6s ease;
+    z-index: -1;
+}
+
+.btn-back-animated:hover {
+    background: #3e4a5c;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-back-animated:hover::after {
+    left: 150%;
+}
+
+.btn-back-animated .back-icon {
+    display: inline-block;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    margin-right: 6px;
+}
+
+.btn-back-animated:hover .back-icon {
+    transform: translateX(-4px) scale(1.1);
+}
+
+/* Dark Theme overrides for the form */
+.form-card {
+    background: #111c35;
+    border: 1px solid #1f335c;
+    color: white;
+}
+
+.form-card .card-header {
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid #1f335c;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.form-label {
+    color: #9fb3d1;
+    font-weight: 500;
+}
+
+.form-control {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: #1a6ef5 !important;
+    box-shadow: 0 0 0 0.25rem rgba(26, 110, 245, 0.25) !important;
+}
+
+select.form-control option {
+    background: #111c35;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid px-4 py-3">
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="m-0" style="font-family: 'DM Serif Display', serif;">Submit a New Claim</h3>
+    
+    <!-- Animated Go Back Button -->
+    <a href="{% url 'accounts:policyholder_dashboard' %}" class="btn-back-animated">
+        <span class="back-icon">←</span> Go Back
+    </a>
+</div>
+
+<div class="card form-card shadow-sm">
+
+<div class="card-header py-3">
+<i class="bi bi-file-earmark-medical me-2"></i> Claim Details Form
+</div>
+
+<div class="card-body p-4">
+
+<form method="POST" enctype="multipart/form-data">
+
+{% csrf_token %}
+
+<!-- Policy -->
+<div class="mb-4">
+
+<label class="form-label">Policy <span class="text-danger">*</span></label>
+
+<select name="policy" class="form-control" required>
+
+<option value="">Select Policy</option>
+
+{% for policy in policies %}
+
+<option value="{{ policy.id }}">
+{{ policy.policy_type }}
+</option>
+
+{% endfor %}
+
+</select>
+
+</div>
+
+
+<!-- Claim Type -->
+<div class="mb-4">
+
+<label class="form-label">Claim Type <span class="text-danger">*</span></label>
+
+<select name="claim_type" class="form-control" required>
+
+<option value="">Select Claim Type</option>
+
+<option value="accident">Accident</option>
+<option value="hospitalization">Hospitalization</option>
+<option value="critical_illness">Critical Illness</option>
+<option value="property_damage">Property Damage</option>
+<option value="theft">Theft</option>
+<option value="fire">Fire</option>
+<option value="natural_disaster">Natural Disaster</option>
+<option value="third_party">Third Party Liability</option>
+<option value="death">Death</option>
+<option value="maturity">Maturity</option>
+<option value="surrender">Surrender</option>
+<option value="other">Other</option>
+
+</select>
+
+</div>
+
+
+<!-- Incident Date -->
+<div class="mb-4">
+
+<label class="form-label">Incident Date <span class="text-danger">*</span></label>
+
+<input type="date"
+name="incident_date"
+class="form-control"
+required>
+
+</div>
+
+
+<!-- Description -->
+<div class="mb-4">
+
+<label class="form-label">Description</label>
+
+<textarea name="description"
+class="form-control"
+rows="4"
+placeholder="Briefly describe the incident..."></textarea>
+
+</div>
+
+
+<!-- Claim Amount -->
+<div class="mb-4">
+
+<label class="form-label">Claim Amount (₹) <span class="text-danger">*</span></label>
+
+<input type="number"
+name="claimed_amount"
+class="form-control"
+placeholder="e.g. 50000"
+required>
+
+</div>
+
+
+<!-- Document Upload -->
+<div class="mb-4">
+
+<label class="form-label">Upload Document</label>
+
+<input type="file"
+name="document"
+class="form-control">
+
+<small class="text-muted d-block mt-2">
+<i class="bi bi-info-circle me-1"></i> Upload supporting documents like reports, medical bills, photos, etc.
+</small>
+
+</div>
+
+
+<!-- Submit -->
+<div class="text-end border-top" style="border-color: #1f335c !important; padding-top: 20px;">
+
+<button type="submit"
+class="btn" style="background: #1a6ef5; color: white; padding: 10px 24px; font-weight: 500; border-radius: 8px;">
+<i class="bi bi-cloud-arrow-up me-1"></i> Submit Claim
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

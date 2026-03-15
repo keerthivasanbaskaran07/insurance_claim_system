@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Premium Schedules{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0 fw-semibold">Premium Schedules</h4>
+  <a href="{% url 'premium:schedule_create' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg"></i> New Schedule
+  </a>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+
+      <div class="col-md-3">
+        <label class="form-label small text-muted">Policy</label>
+        <input type="text" name="policy" value="{{ request.GET.policy }}"
+               class="form-control form-control-sm"
+               placeholder="Search policy...">
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label small text-muted">Frequency</label>
+        <select name="frequency" class="form-select form-select-sm">
+          <option value="">All</option>
+          <option value="single">Single</option>
+          <option value="annual">Annual</option>
+          <option value="half_yearly">Half Yearly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label small text-muted">From</label>
+        <input type="date" name="from" value="{{ request.GET.from }}"
+               class="form-control form-control-sm">
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label small text-muted">To</label>
+        <input type="date" name="to" value="{{ request.GET.to }}"
+               class="form-control form-control-sm">
+      </div>
+
+      <div class="col-md-1 d-grid">
+        <button class="btn btn-secondary btn-sm">Filter</button>
+      </div>
+
+      <div class="col-md-1 d-grid">
+        <a href="{% url 'premium:schedule_list' %}" class="btn btn-outline-secondary btn-sm">Reset</a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+
+  <div class="col-md-3">
+    <div class="card shadow-sm border-0 text-center py-3">
+      <div class="fs-4 fw-bold text-primary">{{ total_schedules }}</div>
+      <div class="small text-muted">Total Schedules</div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card shadow-sm border-0 text-center py-3">
+      <div class="fs-4 fw-bold text-success">₹{{ total_gross_premium|intcomma }}</div>
+      <div class="small text-muted">Total Gross Premium</div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card shadow-sm border-0 text-center py-3">
+      <div class="fs-4 fw-bold text-danger">{{ overdue_count }}</div>
+      <div class="small text-muted">Overdue Instalments</div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card shadow-sm border-0 text-center py-3">
+      <div class="fs-4 fw-bold text-info">{{ auto_debit_count }}</div>
+      <div class="small text-muted">Auto-Debit Enabled</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- Table -->
+<div class="card shadow-sm border-0">
+<div class="table-responsive">
+
+<table class="table table-hover align-middle mb-0">
+
+<thead class="table-dark">
+<tr>
+<th>#</th>
+<th>Policy</th>
+<th>Sum Insured</th>
+<th>Base Premium</th>
+<th>GST</th>
+<th>Gross Premium</th>
+<th>Frequency</th>
+<th>Instalments</th>
+<th>Instalment Amt</th>
+<th>Period</th>
+<th>Auto Debit</th>
+<th class="text-center">Actions</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for schedule in schedules %}
+
+<tr>
+
+<td class="text-muted small">{{ forloop.counter }}</td>
+
+<td>
+<a href="{% url 'policy:detail' schedule.policy.pk %}" class="fw-semibold text-decoration-none">
+{{ schedule.policy.policy_number }}
+</a>
+</td>
+
+<td>₹{{ schedule.sum_insured|intcomma }}</td>
+
+<td>₹{{ schedule.base_premium|intcomma }}</td>
+
+<td>
+₹{{ schedule.gst_amount|intcomma }}
+<span class="badge bg-light text-secondary ms-1">{{ schedule.gst_rate }}%</span>
+</td>
+
+<td class="fw-semibold text-success">
+₹{{ schedule.gross_premium|intcomma }}
+</td>
+
+<td>
+<span class="badge bg-primary">
+{{ schedule.get_payment_frequency_display }}
+</span>
+</td>
+
+<td class="text-center">{{ schedule.total_instalments }}</td>
+
+<td>₹{{ schedule.instalment_amount|intcomma }}</td>
+
+<td class="small">
+{{ schedule.effective_from|date:"d M Y" }}
+<span class="text-muted">–</span>
+{{ schedule.effective_to|date:"d M Y" }}
+</td>
+
+<td class="text-center">
+{% if schedule.auto_debit_enabled %}
+<span class="badge bg-success">Yes</span>
+{% else %}
+<span class="badge bg-secondary">No</span>
+{% endif %}
+</td>
+
+<td class="text-center">
+
+<div class="btn-group btn-group-sm">
+
+<a href="{% url 'premium:schedule_detail' schedule.pk %}" class="btn btn-outline-primary">
+<i class="bi bi-eye"></i>
+</a>
+
+<a href="{% url 'premium:schedule_edit' schedule.pk %}" class="btn btn-outline-secondary">
+<i class="bi bi-pencil"></i>
+</a>
+
+<a href="{% url 'premium:instalment_list' schedule.pk %}" class="btn btn-outline-info">
+<i class="bi bi-list-ol"></i>
+</a>
+
+<button class="btn btn-outline-danger"
+        data-bs-toggle="modal"
+        data-bs-target="#deleteModal"
+        data-id="{{ schedule.pk }}"
+        data-policy="{{ schedule.policy.policy_number }}">
+<i class="bi bi-trash"></i>
+</button>
+
+</div>
+
+</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+<td colspan="12" class="text-center text-muted py-5">
+<i class="bi bi-inbox fs-3"></i><br>
+No premium schedules found
+</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+</table>
+
+</div>
+</div>
+
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav class="mt-4">
+<ul class="pagination pagination-sm justify-content-center">
+
+{% if page_obj.has_previous %}
+<li class="page-item">
+<a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+Prev
+</a>
+</li>
+{% endif %}
+
+{% for num in page_obj.paginator.page_range %}
+<li class="page-item {% if page_obj.number == num %}active{% endif %}">
+<a class="page-link" href="?page={{ num }}">{{ num }}</a>
+</li>
+{% endfor %}
+
+{% if page_obj.has_next %}
+<li class="page-item">
+<a class="page-link" href="?page={{ page_obj.next_page_number }}">
+Next
+</a>
+</li>
+{% endif %}
+
+</ul>
+</nav>
+{% endif %}
+
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+
+const deleteModal = document.getElementById("deleteModal")
+
+deleteModal.addEventListener("show.bs.modal", function(event){
+
+const button = event.relatedTarget
+
+const policy = button.getAttribute("data-policy")
+const id = button.getAttribute("data-id")
+
+document.getElementById("modalPolicyNumber").textContent = policy
+
+document.getElementById("deleteForm").action =
+`/premium/schedule/${id}/delete/`
+
+})
+
+</script>
+{% endblock %}

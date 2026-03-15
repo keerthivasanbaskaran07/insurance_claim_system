@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Claim Assessment — {{ claim.claim_number }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+        
+        <div class="mb-3">
+            <a href="{% url 'claim:review' claim.id %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Review
+            </a>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Assess Claim: {{ claim.claim_number }}</h5>
+            </div>
+            
+            <div class="card-body">
+                
+                <div class="alert alert-secondary small">
+                    <strong>Claimed Amount:</strong> ₹{{ claim.claimed_amount|intcomma }}<br>
+                    <strong>Deductible:</strong> ₹{{ claim.deductible_amount|intcomma }}<br>
+                    <strong>Net Claimable:</strong> ₹{{ claim.claimed_amount|add:"-"|add:claim.deductible_amount|intcomma }}
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Verdict</label>
+                        <select name="verdict" class="form-select" required>
+                            <option value="">Select Verdict...</option>
+                            <option value="approved">Approved</option>
+                            <option value="partially_approved">Partially Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="pending">Pending Further Info</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Recommended Amount (₹)</label>
+                        <input type="number" step="0.01" name="recommended_amount" class="form-control" placeholder="Enter amount..." required>
+                        <div class="form-text text-muted">Amount the team is recommending for settlement.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Remarks</label>
+                        <textarea name="remarks" class="form-control" rows="4" placeholder="Enter assessment notes, reasoning for verdict, etc."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Save Assessment</button>
+                    <a href="{% url 'claim:review' claim.id %}" class="btn btn-secondary">Cancel</a>
+                    
+                </form>
+                
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}

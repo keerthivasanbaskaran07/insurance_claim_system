@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<!-- saved from url=(0036)http://127.0.0.1:8000/claims/create/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Create Claim</title>
+
+<link href="./Create Claim_files/bootstrap.min.css" rel="stylesheet">
+
+<link href="./Create Claim_files/bootstrap-icons.min.css" rel="stylesheet">
+
+<style>
+
+body{
+background:#f5f5f5;
+font-size:14px;
+}
+
+/* SIDEBAR */
+
+#sidebar{
+width:240px;
+background:#212529;
+min-height:100vh;
+position:fixed;
+left:0;
+top:0;
+color:white;
+}
+
+#sidebar a{
+color:#cbd5e1;
+text-decoration:none;
+display:block;
+padding:10px 18px;
+}
+
+#sidebar a:hover{
+background:#343a40;
+color:white;
+}
+
+/* MAIN */
+
+#main{
+margin-left:240px;
+min-height:100vh;
+display:flex;
+flex-direction:column;
+}
+
+/* TOPBAR */
+
+#topbar{
+background:white;
+padding:10px 20px;
+border-bottom:1px solid #e5e7eb;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+/* PAGE */
+
+#page{
+padding:25px;
+flex:1;
+}
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<!-- SIDEBAR -->
+
+<div id="sidebar">
+
+<h5 class="text-center py-3 border-bottom">InsureCRM</h5>
+
+
+
+
+
+
+
+<a href="http://127.0.0.1:8000/accounts/policyholder-dashboard/">
+<i class="bi bi-house"></i> Dashboard
+</a>
+
+
+
+<a href="http://127.0.0.1:8000/policy/">
+<i class="bi bi-file-earmark-text"></i> Policies
+</a>
+
+<a href="http://127.0.0.1:8000/claims/">
+<i class="bi bi-shield-exclamation"></i> Claims
+</a>
+
+<a href="http://127.0.0.1:8000/claims/create/">
+<i class="bi bi-plus-circle"></i> File Claim
+</a>
+
+<a href="http://127.0.0.1:8000/accounts/logout/">
+<i class="bi bi-box-arrow-right"></i> Logout
+</a>
+
+</div>
+
+
+<!-- MAIN -->
+
+<div id="main">
+
+
+<!-- TOPBAR -->
+
+<div id="topbar">
+
+<div>
+
+<b>
+
+Dashboard
+
+</b>
+
+</div>
+
+<div>
+
+leo
+
+</div>
+
+</div>
+
+
+<!-- MESSAGES -->
+
+
+
+
+<!-- PAGE CONTENT -->
+
+<div id="page">
+
+
+
+<div class="container">
+
+<h3 class="mb-4">File New Claim</h3>
+
+<form method="POST">
+
+<input type="hidden" name="csrfmiddlewaretoken" value="821klarbQ1EdJxiHnCBvJ92KJEbdNXrM4qJ6H1MpwWDvFkeAl9XjlB32m378QNF4">
+
+<div class="mb-3">
+<label class="form-label">Policy</label>
+
+<select name="policy" class="form-control" required="">
+
+<option value="">Select Policy</option>
+
+
+
+</select>
+
+</div>
+
+
+<div class="mb-3">
+<label class="form-label">Claim Type</label>
+
+<select name="claim_type" class="form-control">
+
+<option value="accident">Accident</option>
+<option value="hospitalization">Hospitalization</option>
+<option value="death">Death</option>
+<option value="fire">Fire</option>
+
+</select>
+
+</div>
+
+
+<div class="mb-3">
+<label class="form-label">Incident Date</label>
+
+<input type="date" name="incident_date" class="form-control" required="">
+
+</div>
+
+
+<div class="mb-3">
+<label class="form-label">Description</label>
+
+<textarea name="description" class="form-control"></textarea>
+
+</div>
+
+
+<div class="mb-3">
+<label class="form-label">Claim Amount</label>
+
+<input type="number" name="claimed_amount" class="form-control" required="">
+
+</div>
+
+
+<button type="submit" class="btn btn-success">
+
+Submit Claim
+
+</button>
+
+</form>
+
+</div>
+
+
+
+</div>
+
+
+<!-- FOOTER -->
+
+<footer class="text-center p-3 border-top bg-white">
+
+© 2026 Insurance System
+
+</footer>
+
+
+</div>
+
+
+<script src="./Create Claim_files/bootstrap.bundle.min.js.download"></script>
+
+
+
+
+</body></html>

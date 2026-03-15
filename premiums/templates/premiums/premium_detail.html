@@ -1,0 +1,51 @@
+<tbody>
+{% for inst in schedule.instalments.all %}
+<tr>
+
+<td class="text-muted small">{{ inst.instalment_number }}</td>
+
+<td>{{ inst.due_date|date:"d M Y" }}</td>
+
+<td>₹{{ inst.gross_amount|intcomma }}</td>
+
+<td>
+<span class="badge
+{% if inst.status == 'paid' %}
+bg-success
+{% elif inst.status == 'overdue' %}
+bg-danger
+{% elif inst.status == 'due' %}
+bg-warning text-dark
+{% elif inst.status == 'grace' %}
+bg-warning text-dark
+{% elif inst.status == 'lapsed' %}
+bg-dark
+{% else %}
+bg-secondary
+{% endif %}">
+{{ inst.get_status_display }}
+</span>
+</td>
+
+<td>
+{% if inst.paid_at %}
+{{ inst.paid_at|date:"d M Y" }}
+{% else %}
+<span class="text-muted">—</span>
+{% endif %}
+</td>
+
+<td>
+
+<button class="btn btn-outline-info btn-sm"
+data-bs-toggle="collapse"
+data-bs-target="#payments-{{ inst.pk }}">
+
+<i class="bi bi-credit-card"></i>
+{{ inst.payments.count }}
+
+</button>
+
+</td>
+
+</tr>

@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}
+Pay Instalment — {{ instalment.schedule.policy.policy_number }}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+<ol class="breadcrumb small">
+
+<li class="breadcrumb-item">
+<a href="{% url 'premium:schedule_list' %}">
+Premium Schedules
+</a>
+</li>
+
+<li class="breadcrumb-item">
+<a href="{% url 'premium:schedule_detail' instalment.schedule.pk %}">
+{{ instalment.schedule.policy.policy_number }}
+</a>
+</li>
+
+<li class="breadcrumb-item active">
+Instalment #{{ instalment.instalment_number }}
+</li>
+
+</ol>
+</nav>
+
+
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div>
+
+<h4 class="mb-0">Pay Instalment</h4>
+
+<span class="text-muted small">
+{{ instalment.schedule.policy.policy_number }}
+—
+Instalment #{{ instalment.instalment_number }}
+</span>
+
+</div>
+
+<a href="{% url 'premium:schedule_detail' instalment.schedule.pk %}"
+class="btn btn-outline-secondary btn-sm">
+
+<i class="bi bi-arrow-left"></i>
+Back
+
+</a>
+
+</div>
+
+
+
+<div class="row g-4">
+
+<!-- LEFT -->
+<div class="col-lg-7">
+
+<div class="card shadow-sm border-0">
+
+<div class="card-header bg-dark text-white py-2 px-3">
+<i class="bi bi-credit-card"></i>
+Payment Details
+</div>
+
+<div class="card-body">
+
+<form method="post" id="paymentForm">
+
+{% csrf_token %}
+
+
+
+<!-- Amount -->
+<div class="mb-4">
+
+<label class="form-label fw-semibold">
+
+Amount Payable
+
+</label>
+
+<div class="input-group">
+
+<span class="input-group-text">₹</span>
+
+<input type="number"
+name="amount"
+class="form-control form-control-lg fw-bold"
+value="{{ form.amount.value|default:instalment.gross_amount }}"
+step="0.01"
+required>
+
+</div>
+
+<div class="form-text">
+
+Instalment amount:
+<strong>₹{{ instalment.gross_amount|intcomma }}</strong>
+
+</div>
+
+</div>
+
+
+
+<!-- Payment Method -->
+
+<div class="mb-4">
+
+<label class="form-label fw-semibold">
+Payment Method
+</label>
+
+<div class="row g-3">
+
+<div class="col-4">
+
+<input type="radio"
+class="btn-check"
+name="payment_method"
+value="upi"
+id="method_upi"
+required>
+
+<label class="btn btn-outline-secondary w-100"
+for="method_upi">
+
+<i class="bi bi-qr-code"></i>
+UPI
+
+</label>
+
+</div>
+
+
+<div class="col-4">
+
+<input type="radio"
+class="btn-check"
+name="payment_method"
+value="credit_card"
+id="method_card">
+
+<label class="btn btn-outline-secondary w-100"
+for="method_card">
+
+<i class="bi bi-credit-card"></i>
+Card
+
+</label>
+
+</div>
+
+
+<div class="col-4">
+
+<input type="radio"
+class="btn-check"
+name="payment_method"
+value="net_banking"
+id="method_net">
+
+<label class="btn btn-outline-secondary w-100"
+for="method_net">
+
+<i class="bi bi-bank"></i>
+Net Banking
+
+</label>
+
+</div>
+
+
+<div class="col-4">
+
+<input type="radio"
+class="btn-check"
+name="payment_method"
+value="neft"
+id="method_neft">
+
+<label class="btn btn-outline-secondary w-100"
+for="method_neft">
+
+<i class="bi bi-arrow-left-right"></i>
+NEFT
+
+</label>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<!-- Transaction -->
+
+<div class="mb-4">
+
+<label class="form-label fw-semibold">
+Transaction ID
+</label>
+
+<input type="text"
+name="gateway_transaction_id"
+class="form-control"
+placeholder="UPI123456789">
+
+</div>
+
+
+
+<!-- Status -->
+
+<div class="mb-4">
+
+<label class="form-label fw-semibold">
+Payment Status
+</label>
+
+<select name="status" class="form-select">
+
+<option value="pending">Pending</option>
+
+<option value="success">Success</option>
+
+<option value="failed">Failed</option>
+
+<option value="refunded">Refunded</option>
+
+</select>
+
+</div>
+
+
+
+<div class="d-flex gap-2 mt-4">
+
+<button type="submit"
+class="btn btn-success">
+
+<i class="bi bi-check-circle"></i>
+Record Payment
+
+</button>
+
+<a href="{% url 'premium:schedule_detail' instalment.schedule.pk %}"
+class="btn btn-outline-secondary">
+
+Cancel
+
+</a>
+
+</div>
+
+</form>
+
+</div>
+</div>
+</div>
+
+
+
+<!-- RIGHT COLUMN -->
+<div class="col-lg-5">
+
+<div class="card shadow-sm border-0 mb-4">
+
+<div class="card-header bg-dark text-white py-2 px-3">
+Instalment Summary
+</div>
+
+<ul class="list-group list-group-flush">
+
+<li class="list-group-item d-flex justify-content-between">
+
+<span class="text-muted small">
+Instalment
+</span>
+
+<span>
+#{{ instalment.instalment_number }}
+</span>
+
+</li>
+
+<li class="list-group-item d-flex justify-content-between">
+
+<span class="text-muted small">
+Due Date
+</span>
+
+<span>
+{{ instalment.due_date|date:"d M Y" }}
+</span>
+
+</li>
+
+<li class="list-group-item d-flex justify-content-between">
+
+<span class="text-muted small">
+Amount
+</span>
+
+<span class="fw-bold text-success">
+₹{{ instalment.gross_amount|intcomma }}
+</span>
+
+</li>
+
+<li class="list-group-item d-flex justify-content-between">
+
+<span class="text-muted small">
+Status
+</span>
+
+<span class="badge
+{% if instalment.status == 'paid' %}
+bg-success
+{% elif instalment.status == 'overdue' %}
+bg-danger
+{% elif instalment.status == 'due' %}
+bg-warning text-dark
+{% else %}
+bg-secondary
+{% endif %}">
+
+{{ instalment.get_status_display }}
+
+</span>
+
+</li>
+
+</ul>
+
+</div>
+
+
+
+<!-- Previous Attempts -->
+
+{% if instalment.payments.exists %}
+
+<div class="card shadow-sm border-0">
+
+<div class="card-header bg-dark text-white py-2 px-3">
+
+Previous Attempts
+
+</div>
+
+<ul class="list-group list-group-flush">
+
+{% for prev in instalment.payments.all|dictsortreversed:"created_at" %}
+
+<li class="list-group-item">
+
+<div class="d-flex justify-content-between">
+
+<span class="badge
+{% if prev.status == 'success' %}
+bg-success
+{% elif prev.status == 'failed' %}
+bg-danger
+{% else %}
+bg-secondary
+{% endif %}">
+
+{{ prev.get_status_display }}
+
+</span>
+
+<span class="fw-semibold">
+₹{{ prev.amount|intcomma }}
+</span>
+
+</div>
+
+<div class="small text-muted">
+
+{{ prev.created_at|date:"d M Y H:i" }}
+
+</div>
+
+</li>
+
+{% endfor %}
+
+</ul>
+
+</div>
+
+{% endif %}
+
+</div>
+
+</div>
+
+</div>
+{% endblock %}

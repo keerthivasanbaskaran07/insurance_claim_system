@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Premium Payment History — {{ schedule.policy.policy_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+<ol class="breadcrumb small">
+
+<li class="breadcrumb-item">
+<a href="{% url 'premium:schedule_list' %}">Premium Schedules</a>
+</li>
+
+<li class="breadcrumb-item">
+<a href="{% url 'premium:schedule_detail' schedule.pk %}">
+{{ schedule.policy.policy_number }}
+</a>
+</li>
+
+<li class="breadcrumb-item active">
+Payment History
+</li>
+
+</ol>
+</nav>
+
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div>
+
+<h4 class="mb-0">Payment History</h4>
+
+<span class="text-muted small">
+{{ schedule.policy.policy_number }} — {{ schedule.policy.policyholder }}
+</span>
+
+</div>
+
+<div class="d-flex gap-2">
+
+<a href="{% url 'premium:schedule_detail' schedule.pk %}"
+class="btn btn-outline-secondary btn-sm">
+
+<i class="bi bi-arrow-left me-1"></i>
+Back
+
+</a>
+
+<a href="{% url 'premium:history_export' schedule.pk %}"
+class="btn btn-outline-success btn-sm">
+
+<i class="bi bi-download me-1"></i>
+Export CSV
+
+</a>
+
+</div>
+
+</div>
+
+
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+
+<div class="col-md-2">
+<div class="card shadow-sm border-0 text-center py-3">
+<div class="fw-bold text-primary fs-5">{{ total_payments }}</div>
+<div class="small text-muted">Transactions</div>
+</div>
+</div>
+
+<div class="col-md-2">
+<div class="card shadow-sm border-0 text-center py-3">
+<div class="fw-bold text-success fs-5">
+₹{{ total_paid|intcomma }}
+</div>
+<div class="small text-muted">Total Paid</div>
+</div>
+</div>
+
+<div class="col-md-2">
+<div class="card shadow-sm border-0 text-center py-3">
+<div class="fw-bold text-danger fs-5">
+₹{{ total_failed|intcomma }}
+</div>
+<div class="small text-muted">Failed</div>
+</div>
+</div>
+
+<div class="col-md-2">
+<div class="card shadow-sm border-0 text-center py-3">
+<div class="fw-bold text-warning fs-5">
+₹{{ total_pending|intcomma }}
+</div>
+<div class="small text-muted">Pending</div>
+</div>
+</div>
+
+<div class="col-md-2">
+<div class="card shadow-sm border-0 text-center py-3">
+<div class="fw-bold text-info fs-5">
+₹{{ total_refunded|intcomma }}
+</div>
+<div class="small text-muted">Refunded</div>
+</div>
+</div>
+
+<div class="col-md-2">
+<div class="card shadow-sm border-0 text-center py-3">
+<div class="fw-bold text-secondary fs-5">
+{{ paid_instalments }} / {{ schedule.total_instalments }}
+</div>
+<div class="small text-muted">Instalments Paid</div>
+</div>
+</div>
+
+</div>
+
+
+
+<!-- Payments Table -->
+<div class="card border-0 shadow-sm">
+
+<div class="card-header bg-dark text-white py-2 px-3">
+<i class="bi bi-clock-history me-1"></i>
+Payment Transactions
+</div>
+
+<div class="card-body p-0">
+
+<div class="table-responsive">
+
+<table class="table table-hover align-middle mb-0">
+
+<thead class="table-light">
+
+<tr>
+<th>#</th>
+<th>Transaction ID</th>
+<th>Instalment</th>
+<th>Due Date</th>
+<th>Amount</th>
+<th>Method</th>
+<th>Status</th>
+<th>Confirmed</th>
+<th>Instalment Status</th>
+<th>Created</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for payment in payments %}
+
+<tr>
+
+<td class="text-muted small">
+{{ forloop.counter }}
+</td>
+
+<td>
+
+{% if payment.gateway_transaction_id %}
+
+<code class="small">
+{{ payment.gateway_transaction_id }}
+</code>
+
+{% else %}
+
+<span class="text-muted">—</span>
+
+{% endif %}
+
+</td>
+
+<td class="text-center">
+
+<span class="badge bg-light text-dark border">
+#{{ payment.instalment.instalment_number }}
+</span>
+
+</td>
+
+<td class="small">
+{{ payment.instalment.due_date|date:"d M Y" }}
+</td>
+
+<td class="fw-semibold">
+₹{{ payment.amount|intcomma }}
+</td>
+
+<td>
+
+<span class="badge bg-primary">
+{{ payment.get_payment_method_display }}
+</span>
+
+</td>
+
+<td>
+
+<span class="badge
+{% if payment.status == 'success' %}
+bg-success
+{% elif payment.status == 'failed' %}
+bg-danger
+{% elif payment.status == 'refunded' %}
+bg-warning text-dark
+{% else %}
+bg-secondary
+{% endif %}
+">
+
+{{ payment.get_status_display }}
+
+</span>
+
+</td>
+
+<td class="small">
+
+{% if payment.confirmed_at %}
+
+{{ payment.confirmed_at|date:"d M Y" }}
+
+<br>
+
+<span class="text-muted" style="font-size:0.72rem;">
+{{ payment.confirmed_at|date:"H:i" }}
+</span>
+
+{% else %}
+
+<span class="text-muted">—</span>
+
+{% endif %}
+
+</td>
+
+<td>
+
+<span class="badge
+{% if payment.instalment.status == 'paid' %}
+bg-success
+{% elif payment.instalment.status == 'overdue' %}
+bg-danger
+{% elif payment.instalment.status == 'due' %}
+bg-warning text-dark
+{% elif payment.instalment.status == 'grace' %}
+bg-warning text-dark
+{% elif payment.instalment.status == 'lapsed' %}
+bg-dark
+{% else %}
+bg-secondary
+{% endif %}
+">
+
+{{ payment.instalment.get_status_display }}
+
+</span>
+
+</td>
+
+<td class="small text-muted">
+{{ payment.created_at|date:"d M Y H:i" }}
+</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+
+<td colspan="10" class="text-center text-muted py-5">
+
+<i class="bi bi-inbox fs-2 d-block mb-2"></i>
+
+No payment records found.
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+</div>
+</div>
+
+
+
+<!-- Pagination -->
+{% if is_paginated %}
+
+<nav class="mt-4 d-flex justify-content-center">
+
+<ul class="pagination pagination-sm">
+
+{% if page_obj.has_previous %}
+
+<li class="page-item">
+<a class="page-link"
+href="?page={{ page_obj.previous_page_number }}">
+« Prev
+</a>
+</li>
+
+{% endif %}
+
+{% for num in page_obj.paginator.page_range %}
+
+<li class="page-item {% if page_obj.number == num %}active{% endif %}">
+
+<a class="page-link"
+href="?page={{ num }}">
+
+{{ num }}
+
+</a>
+
+</li>
+
+{% endfor %}
+
+{% if page_obj.has_next %}
+
+<li class="page-item">
+
+<a class="page-link"
+href="?page={{ page_obj.next_page_number }}">
+
+Next »
+
+</a>
+
+</li>
+
+{% endif %}
+
+</ul>
+
+</nav>
+
+{% endif %}
+
+
+</div>
+{% endblock %}

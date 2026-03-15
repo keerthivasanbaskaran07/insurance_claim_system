@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Claim {{ claim.claim_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+<!-- Back Button -->
+<div class="mb-3">
+<a href="{% url 'claim:list' %}" class="btn btn-outline-secondary btn-sm">
+<i class="bi bi-arrow-left me-1"></i> Back to Claims
+</a>
+</div>
+
+<!-- HEADER -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+
+<div>
+
+<h4 class="mb-1">{{ claim.claim_number }}</h4>
+
+<div class="d-flex gap-2 flex-wrap">
+
+<span class="badge
+{% if claim.status == 'draft' %}bg-secondary
+{% elif claim.status == 'submitted' %}bg-primary
+{% elif claim.status == 'under_review' %}bg-warning text-dark
+{% elif claim.status == 'investigation' %}bg-info
+{% elif claim.status == 'approved' %}bg-success
+{% elif claim.status == 'partially_approved' %}bg-success
+{% elif claim.status == 'rejected' %}bg-danger
+{% elif claim.status == 'settled' %}bg-dark
+{% else %}bg-secondary{% endif %}">
+{{ claim.get_status_display }}
+</span>
+
+<span class="badge bg-light text-dark border">
+{{ claim.get_claim_type_display }}
+</span>
+
+<span class="text-muted small">
+Reported: {{ claim.reported_date|date:"d M Y" }}
+</span>
+
+</div>
+
+</div>
+
+<div class="d-flex gap-2">
+
+{% if request.user == claim.policy.holder.user %}
+<a href="{% url 'claim:edit' claim.pk %}"
+class="btn btn-outline-primary btn-sm">
+Edit
+</a>
+{% endif %}
+
+{% if request.user.role != 'policyholder' %}
+<a href="{% url 'claim:review' claim.id %}" class="btn btn-warning btn-sm">Review</a>
+
+{% if request.user.role == 'admin' or request.user.is_admin %}
+<form method="post" action="{% url 'claim:update_status' claim.id %}" class="d-inline-block m-0">
+  {% csrf_token %}
+  <input type="hidden" name="status" value="approved">
+  <button type="submit" class="btn btn-success btn-sm" {% if claim.status == 'approved' or claim.status == 'settled' %}disabled{% endif %}>Approve</button>
+</form>
+
+<form method="post" action="{% url 'claim:update_status' claim.id %}" class="d-inline-block m-0">
+  {% csrf_token %}
+  <input type="hidden" name="status" value="rejected">
+  <button type="submit" class="btn btn-danger btn-sm" {% if claim.status == 'rejected' %}disabled{% endif %}>Reject</button>
+</form>
+
+<form method="post" action="{% url 'claim:delete' claim.id %}" class="d-inline-block m-0">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this claim?');">Delete</button>
+</form>
+{% endif %}
+
+{% endif %}
+
+<button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+<i class="bi bi-download me-1"></i> Download PDF
+</button>
+
+</div>
+
+</div>
+
+
+
+<div class="row g-4">
+
+<!-- LEFT COLUMN -->
+<div class="col-lg-8">
+
+
+<!-- CLAIM DETAILS -->
+<div class="card shadow-sm mb-4">
+
+<div class="card-header bg-dark text-white">
+Claim Details
+</div>
+
+<div class="card-body">
+
+<div class="row g-3">
+
+<div class="col-md-4">
+<small class="text-muted">Claim Number</small>
+<div class="fw-semibold">{{ claim.claim_number }}</div>
+</div>
+
+<div class="col-md-4">
+<small class="text-muted">Claim Type</small>
+<div>{{ claim.get_claim_type_display }}</div>
+</div>
+
+<div class="col-md-4">
+<small class="text-muted">Status</small>
+<div>{{ claim.get_status_display }}</div>
+</div>
+
+<div class="col-md-4">
+<small class="text-muted">Incident Date</small>
+<div>{{ claim.incident_date|date:"d M Y" }}</div>
+</div>
+
+<div class="col-md-4">
+<small class="text-muted">Reported Date</small>
+<div>{{ claim.reported_date|date:"d M Y" }}</div>
+</div>
+
+<div class="col-md-4">
+<small class="text-muted">Assigned To</small>
+
+<div>
+{% if claim.assigned_to %}
+{{ claim.assigned_to.get_full_name|default:claim.assigned_to.username }}
+{% else %}
+<span class="text-muted">Unassigned</span>
+{% endif %}
+</div>
+
+</div>
+
+<div class="col-12">
+
+<small class="text-muted">Description</small>
+
+<div class="bg-light p-3 rounded small">
+{{ claim.description|default:"No description provided."|linebreaks }}
+</div>
+
+</div>
+
+{% if claim.rejection_reason %}
+
+<div class="col-12">
+
+<div class="alert alert-danger small mb-0">
+{{ claim.rejection_reason }}
+</div>
+
+</div>
+
+{% endif %}
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<!-- FINANCIAL SUMMARY -->
+<div class="card shadow-sm mb-4">
+
+<div class="card-header bg-dark text-white">
+Financial Summary
+</div>
+
+<table class="table mb-0">
+
+<tr>
+<td>Claimed Amount</td>
+<td class="fw-bold">
+₹{{ claim.claimed_amount|default:0|intcomma }}
+</td>
+</tr>
+
+<tr>
+<td>Deductible</td>
+<td>
+₹{{ claim.deductible_amount|default:0|intcomma }}
+</td>
+</tr>
+
+<tr>
+<td>Approved</td>
+<td>
+{% if claim.status == 'approved' or claim.status == 'partially_approved' or claim.status == 'settled' %}
+₹{{ claim.approved_amount|default:claim.claimed_amount|intcomma }}
+{% else %}
+—
+{% endif %}
+</td>
+</tr>
+
+<tr>
+<td>Settled</td>
+<td>
+{% if claim.status == 'settled' %}
+₹{{ claim.settled_amount|default:claim.approved_amount|default:claim.claimed_amount|intcomma }}
+{% elif claim.status == 'approved' or claim.status == 'partially_approved' %}
+₹{{ claim.approved_amount|default:claim.claimed_amount|intcomma }}
+{% else %}
+—
+{% endif %}
+</td>
+</tr>
+
+</table>
+
+</div>
+
+
+
+<!-- NOTES -->
+<div class="card shadow-sm">
+
+<div class="card-header bg-dark text-white">
+Notes
+</div>
+
+<div class="card-body">
+
+<form method="post" action="{% url 'claim:add_note' claim.pk %}">
+
+{% csrf_token %}
+
+<div class="mb-2">
+
+<select name="note_type" class="form-control mb-2">
+
+<option value="internal">Internal</option>
+<option value="customer">Customer</option>
+<option value="investigation">Investigation</option>
+
+</select>
+
+<textarea name="content"
+class="form-control"
+placeholder="Write note"></textarea>
+
+</div>
+
+<div class="text-end">
+
+<button class="btn btn-dark btn-sm">
+Add Note
+</button>
+
+</div>
+
+</form>
+
+<hr>
+
+
+{% for note in claim.notes.all %}
+
+<div class="border rounded p-3 mb-2">
+
+<div class="small text-muted">
+
+{{ note.created_at|date:"d M Y H:i" }}
+
+{% if note.created_by %}
+— {{ note.created_by.username }}
+{% endif %}
+
+</div>
+
+<div class="small">
+
+{{ note.content }}
+
+</div>
+
+</div>
+
+{% empty %}
+
+<div class="text-muted small">
+No notes yet
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<!-- RIGHT COLUMN -->
+<div class="col-lg-4">
+
+<!-- POLICY -->
+<div class="card shadow-sm mb-4">
+
+<div class="card-header bg-dark text-white">
+Policy
+</div>
+
+<ul class="list-group list-group-flush">
+
+<li class="list-group-item d-flex justify-content-between">
+<span>Policy</span>
+<span>{{ claim.policy.policy_number }}</span>
+</li>
+
+<li class="list-group-item d-flex justify-content-between">
+<span>Policyholder</span>
+<span>{{ claim.policy.holder }}</span>
+</li>
+
+<li class="list-group-item d-flex justify-content-between">
+<span>Start</span>
+<span>{{ claim.policy.start_date }}</span>
+</li>
+
+<li class="list-group-item d-flex justify-content-between">
+<span>End</span>
+<span>{{ claim.policy.end_date }}</span>
+</li>
+
+</ul>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Claim Settlement — {{ claim.claim_number }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+        
+        <div class="mb-3">
+            <a href="{% url 'claim:review' claim.id %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Review
+            </a>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Settle Claim: {{ claim.claim_number }}</h5>
+            </div>
+            
+            <div class="card-body">
+                
+                <div class="alert alert-secondary small">
+                    <strong>Claimed Amount:</strong> ₹{{ claim.claimed_amount|intcomma }}<br>
+                    <strong>Deductible:</strong> ₹{{ claim.deductible_amount|intcomma }}<br>
+                    {% if claim.assessment %}
+                    <strong>Recommended Amount:</strong> <span class="text-success fw-bold">₹{{ claim.assessment.recommended_amount|intcomma }}</span>
+                    {% endif %}
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Payment Mode</label>
+                            <select name="payment_mode" class="form-select" required>
+                                <option value="">Select Payment Method...</option>
+                                <option value="neft">NEFT/IMPS/RTGS</option>
+                                <option value="cheque">Cheque</option>
+                                <option value="upi">UPI</option>
+                                <option value="cash">Cash</option>
+                                <option value="dd">Demand Draft</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Settled Amount (₹)</label>
+                            <input type="number" step="0.01" name="settled_amount" class="form-control" value="{% if claim.assessment and claim.assessment.recommended_amount %}{{ claim.assessment.recommended_amount|stringformat:'f' }}{% else %}{{ claim.claimed_amount|stringformat:'f' }}{% endif %}" placeholder="Ex: 50000" required>
+                            <div class="form-text text-muted">Final amount paid to policyholder.</div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Payee Name</label>
+                            <input type="text" name="payee_name" class="form-control" value="{{ claim.policy.holder.user.get_full_name|default:claim.policy.holder.user.username }}" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Transaction Reference (Txn ID/Cheque No/UPI ID)</label>
+                            <input type="text" name="reference" class="form-control" placeholder="Optional/if applicable">
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Internal Remarks/Notes</label>
+                        <textarea name="remarks" class="form-control" rows="3" placeholder="Enter settlement notes..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Submit Settlement Record</button>
+                    <a href="{% url 'claim:review' claim.id %}" class="btn btn-secondary">Cancel</a>
+                    
+                </form>
+                
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}

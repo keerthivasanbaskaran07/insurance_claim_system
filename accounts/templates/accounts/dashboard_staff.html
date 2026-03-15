@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Staff Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+<!-- HEADER -->
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div>
+<h3>Welcome {{ request.user.username }}</h3>
+<p class="text-muted">Staff Claim Management Dashboard</p>
+</div>
+
+<a href="{% url 'claim:list' %}" class="btn btn-dark">
+View All Claims
+</a>
+
+</div>
+
+
+<!-- KPI CARDS -->
+
+<div class="row g-3 mb-4">
+
+<div class="col-md-3">
+<div class="card shadow-sm">
+<div class="card-body">
+
+<h6 class="text-muted">Total Claims</h6>
+<h3>{{ kpi.total_claims }}</h3>
+
+</div>
+</div>
+</div>
+
+
+<div class="col-md-3">
+<div class="card shadow-sm">
+<div class="card-body">
+
+<h6 class="text-muted">Submitted Claims</h6>
+<h3>{{ kpi.submitted_claims }}</h3>
+
+</div>
+</div>
+</div>
+
+
+<div class="col-md-3">
+<div class="card shadow-sm">
+<div class="card-body">
+
+<h6 class="text-muted">Approved Claims</h6>
+<h3 class="text-success">{{ kpi.approved_claims }}</h3>
+
+</div>
+</div>
+</div>
+
+
+<div class="col-md-3">
+<div class="card shadow-sm">
+<div class="card-body">
+
+<h6 class="text-muted">Rejected Claims</h6>
+<h3 class="text-danger">{{ kpi.rejected_claims }}</h3>
+
+</div>
+</div>
+</div>
+
+</div>
+
+
+
+<!-- CLAIM STATUS SUMMARY -->
+
+<div class="card shadow-sm mb-4">
+
+<div class="card-header">
+<h5>Claims by Status</h5>
+</div>
+
+<div class="card-body">
+
+{% for item in claim_status_summary %}
+
+<div class="mb-2">
+
+<div class="d-flex justify-content-between">
+
+<span>{{ item.label }}</span>
+
+<span>{{ item.count }}</span>
+
+</div>
+
+<div class="progress">
+
+<div class="progress-bar {{ item.bar_class }}"
+style="width: {{ item.percentage|default:0 }}%;"></div>
+
+</div>
+
+</div>
+
+{% empty %}
+
+<p class="text-muted">No claim data available</p>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+
+
+<!-- RECENT CLAIMS -->
+
+<div class="card shadow-sm mb-4">
+
+<div class="card-header">
+<h5>Recent Claims</h5>
+</div>
+
+<div class="card-body">
+
+<table class="table table-bordered table-hover">
+
+<thead>
+
+<tr>
+<th>Claim No</th>
+<th>Policy</th>
+<th>Claim Type</th>
+<th>Claimed Amount</th>
+<th>Status</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for claim in recent_claims %}
+
+<tr>
+
+<td>
+<a href="{% url 'claim:detail' claim.id %}">
+{{ claim.claim_number }}
+</a>
+</td>
+
+<td>{{ claim.policy.policy_number }}</td>
+
+<td>{{ claim.get_claim_type_display }}</td>
+
+<td>₹{{ claim.claimed_amount|default:0|intcomma }}</td>
+
+<td>
+
+<span class="badge
+{% if claim.status == "submitted" %}
+bg-primary
+{% elif claim.status == "under_review" %}
+bg-warning
+{% elif claim.status == "approved" %}
+bg-success
+{% elif claim.status == "rejected" %}
+bg-danger
+{% else %}
+bg-secondary
+{% endif %}
+">
+
+{{ claim.get_status_display }}
+
+</span>
+
+</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+<td colspan="5" class="text-center">No claims available</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+
+<!-- PENDING CLAIMS -->
+
+<div class="card shadow-sm">
+
+<div class="card-header">
+<h5>Pending Claims for Review</h5>
+</div>
+
+<div class="card-body">
+
+<table class="table table-bordered table-hover">
+
+<thead>
+
+<tr>
+<th>Claim Number</th>
+<th>Policyholder</th>
+<th>Claim Type</th>
+<th>Amount</th>
+<th>Action</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for claim in pending_claims %}
+
+<tr>
+
+<td>{{ claim.claim_number }}</td>
+
+<td>{{ claim.policy.holder }}</td>
+
+<td>{{ claim.get_claim_type_display }}</td>
+
+<td>₹{{ claim.claimed_amount|intcomma }}</td>
+
+<td>
+
+<a href="{% url 'claim:detail' claim.id %}" class="btn btn-sm btn-primary">
+Review
+</a>
+
+</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+<td colspan="5" class="text-center">No pending claims</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

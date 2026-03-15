@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Review Claim — {{ claim.claim_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+<!-- Breadcrumb -->
+<nav class="mb-3">
+<ol class="breadcrumb small">
+<li class="breadcrumb-item">
+<a href="{% url 'claim:list' %}">Claims</a>
+</li>
+<li class="breadcrumb-item">
+<a href="{% url 'claim:detail' claim.pk %}">
+{{ claim.claim_number }}
+</a>
+</li>
+<li class="breadcrumb-item active">Review</li>
+</ol>
+</nav>
+
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+
+<div>
+
+<h4 class="mb-1">Review Claim</h4>
+
+<div class="d-flex gap-2 flex-wrap">
+
+<span class="badge
+{% if claim.status == 'submitted' %}bg-primary
+{% elif claim.status == 'under_review' %}bg-warning text-dark
+{% elif claim.status == 'investigation' %}bg-info
+{% elif claim.status == 'approved' %}bg-success
+{% elif claim.status == 'rejected' %}bg-danger
+{% else %}bg-secondary{% endif %}">
+{{ claim.get_status_display }}
+</span>
+
+<span class="badge bg-light text-dark border">
+{{ claim.get_claim_type_display }}
+</span>
+
+<span class="text-muted small">
+Policy: {{ claim.policy.policy_number }}
+</span>
+
+</div>
+
+</div>
+
+<div class="d-flex gap-2">
+  <a href="{% url 'claim:settlement' claim.pk %}" class="btn btn-primary btn-sm {% if claim.status == 'settled' %}disabled{% endif %}">
+    Settle Claim
+  </a>
+  <a href="{% url 'claim:detail' claim.pk %}" class="btn btn-outline-secondary btn-sm">
+    Back to Claim
+  </a>
+</div>
+
+</div>
+
+
+
+<div class="row g-4">
+
+<!-- LEFT COLUMN -->
+<div class="col-lg-8">
+
+<!-- Claim Overview -->
+<div class="card shadow-sm mb-4">
+
+<div class="card-header bg-dark text-white">
+Claim Overview
+</div>
+
+<div class="card-body">
+
+<div class="row g-3">
+
+<div class="col-md-4">
+<small class="text-muted">Claim Number</small>
+<div>{{ claim.claim_number }}</div>
+</div>
+
+<div class="col-md-4">
+<small class="text-muted">Claim Type</small>
+<div>{{ claim.get_claim_type_display }}</div>
+</div>
+
+<div class="col-md-4">
+<small class="text-muted">Assigned Officer</small>
+<div>
+{% if claim.assigned_to %}
+{{ claim.assigned_to.get_full_name|default:claim.assigned_to.username }}
+{% else %}
+<span class="text-muted">Unassigned</span>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-4">
+<small class="text-muted">Incident Date</small>
+<div>{{ claim.incident_date|date:"d M Y" }}</div>
+</div>
+
+<div class="col-md-4">
+<small class="text-muted">Reported Date</small>
+<div>{{ claim.reported_date|date:"d M Y" }}</div>
+</div>
+
+<div class="col-md-4">
+<small class="text-muted">Days Since Incident</small>
+<div>{{ days_since_incident }} days</div>
+</div>
+
+<div class="col-12">
+<small class="text-muted">Description</small>
+
+<div class="bg-light p-3 rounded small">
+{{ claim.description|default:"No description"|linebreaks }}
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+
+
+<!-- Financial -->
+<div class="card shadow-sm mb-4">
+
+<div class="card-header bg-dark text-white">
+Financial Details
+</div>
+
+<table class="table mb-0">
+
+<tr>
+<td>Claimed Amount</td>
+<td class="fw-bold">
+₹{{ claim.claimed_amount|default:0|intcomma }}
+</td>
+</tr>
+
+<tr>
+<td>Deductible</td>
+<td class="text-danger">
+₹{{ claim.deductible_amount|default:0|intcomma }}
+</td>
+</tr>
+
+<tr>
+<td>Net Claimable</td>
+<td class="fw-bold text-primary">
+₹{{ net_claimable|default:0|intcomma }}
+</td>
+</tr>
+
+<tr>
+<td>Sum Insured</td>
+<td class="text-success">
+₹{{ claim.policy.sum_insured|default:0|intcomma }}
+</td>
+</tr>
+
+</table>
+
+</div>
+
+
+
+<!-- Policy Verification -->
+<div class="card shadow-sm mb-4">
+
+<div class="card-header bg-dark text-white">
+Policy Verification
+</div>
+
+<div class="card-body">
+
+<div class="row g-3">
+
+<div class="col-md-4">
+<small class="text-muted">Policy Number</small>
+<div>{{ claim.policy.policy_number }}</div>
+</div>
+
+<div class="col-md-4">
+<small class="text-muted">Policyholder</small>
+<div>{{ claim.policy.holder }}</div>
+</div>
+
+<div class="col-md-4">
+<small class="text-muted">Policy Active</small>
+
+{% if policy_active_on_incident %}
+<span class="badge bg-success">Yes</span>
+{% else %}
+<span class="badge bg-danger">No</span>
+{% endif %}
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+
+
+
+<!-- RIGHT COLUMN -->
+<div class="col-lg-4">
+
+
+<!-- Assessment -->
+<div class="card shadow-sm mb-4">
+
+<div class="card-header bg-dark text-white">
+Assessment
+</div>
+
+{% if claim.assessment %}
+
+<ul class="list-group list-group-flush">
+
+<li class="list-group-item d-flex justify-content-between">
+<span>Verdict</span>
+<span class="badge bg-success">
+{{ claim.assessment.get_verdict_display }}
+</span>
+</li>
+
+<li class="list-group-item d-flex justify-content-between">
+<span>Recommended</span>
+<span>
+₹{{ claim.assessment.recommended_amount|default:0|intcomma }}
+</span>
+</li>
+
+</ul>
+
+{% else %}
+
+<div class="card-body text-center text-muted py-4">
+  <div class="mb-2">No assessment yet</div>
+  <a href="{% url 'claim:assessment' claim.pk %}" class="btn btn-outline-primary btn-sm mt-2">
+    Add Assessment
+  </a>
+</div>
+
+{% endif %}
+
+</div>
+
+
+
+<!-- Settlement -->
+<div class="card shadow-sm">
+
+<div class="card-header bg-dark text-white">
+Settlement
+</div>
+
+{% if claim.settlement %}
+
+<ul class="list-group list-group-flush">
+
+<li class="list-group-item d-flex justify-content-between">
+<span>Amount</span>
+<span class="text-primary">
+₹{{ claim.settlement.settled_amount|default:0|intcomma }}
+</span>
+</li>
+
+<li class="list-group-item d-flex justify-content-between">
+<span>Mode</span>
+<span>
+{{ claim.settlement.get_payment_mode_display }}
+</span>
+</li>
+
+</ul>
+
+{% else %}
+
+<div class="card-body text-center text-muted py-4">
+  <div class="mb-2">No settlement recorded</div>
+  <a href="{% url 'claim:settlement' claim.pk %}" class="btn btn-outline-primary btn-sm mt-2">
+    Record Settlement
+  </a>
+</div>
+
+{% endif %}
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}
