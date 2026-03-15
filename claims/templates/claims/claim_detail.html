@@ -8,8 +8,14 @@
 
 <!-- Back Button -->
 <div class="mb-3">
+{% if request.user.role == 'staff' %}
+<a href="{% url 'accounts:staff_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+{% elif request.user.role == 'admin' or request.user.is_superuser %}
+<a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+{% else %}
 <a href="{% url 'claim:list' %}" class="btn btn-outline-secondary btn-sm">
-<i class="bi bi-arrow-left me-1"></i> Back to Claims
+{% endif %}
+<i class="bi bi-arrow-left me-1"></i> Back to Dashboard
 </a>
 </div>
 
@@ -49,14 +55,14 @@ Reported: {{ claim.reported_date|date:"d M Y" }}
 
 <div class="d-flex gap-2">
 
-{% if request.user == claim.policy.holder.user %}
+          {% if request.user == claim.policy.holder.user and request.user.role != 'admin' and request.user.role != 'staff' %}
 <a href="{% url 'claim:edit' claim.pk %}"
 class="btn btn-outline-primary btn-sm">
 Edit
 </a>
 {% endif %}
 
-{% if request.user.role != 'policyholder' %}
+{% if request.user.role == 'admin' or request.user.is_superuser %}
 <a href="{% url 'claim:review' claim.id %}" class="btn btn-warning btn-sm">Review</a>
 
 {% if request.user.role == 'admin' or request.user.is_admin %}
@@ -174,6 +180,41 @@ Claim Details
 </div>
 
 
+
+<!-- STAFF ASSESSMENT REPORT -->
+{% if request.user.role == 'admin' or request.user.is_superuser %}
+{% if claim.policy_validity %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-info text-white">
+        Staff Assessment Report
+    </div>
+    <div class="card-body">
+        <div class="row g-3 small">
+            <div class="col-md-4">
+                <small class="text-muted">Policy Validity</small>
+                <div class="fw-bold">{{ claim.policy_validity }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">Document Verification</small>
+                <div class="fw-bold">{{ claim.document_verification }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">Damage/Medical Verification</small>
+                <div class="fw-bold">{{ claim.amount_verification }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">Recommended Amount</small>
+                <div class="fw-bold text-success">₹{{ claim.recommended_amount|default:0|intcomma }}</div>
+            </div>
+            <div class="col-12">
+                <small class="text-muted">Assessment Notes</small>
+                <div class="bg-light p-2 rounded mt-1">{{ claim.staff_comments|default:"No notes available." }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
 
 <!-- FINANCIAL SUMMARY -->
 <div class="card shadow-sm mb-4">

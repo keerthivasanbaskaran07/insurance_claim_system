@@ -93,6 +93,13 @@ class Claim(models.Model):
 
     rejection_reason = models.TextField(blank=True)
 
+    # Staff Verification Fields
+    policy_validity = models.CharField(max_length=20, blank=True, null=True)
+    document_verification = models.CharField(max_length=20, blank=True, null=True)
+    amount_verification = models.CharField(max_length=20, blank=True, null=True)
+    staff_comments = models.TextField(blank=True, null=True)
+    recommended_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

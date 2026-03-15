@@ -331,47 +331,43 @@ transform: scale(1.15) translateX(2px); /* Slight nudge instead of simple scale 
 
 <h5 class="text-center py-3 border-bottom">InsureCRM</h5>
 
-{% if request.user.is_superuser or request.user.role == "admin" %}
+    {% block sidebar_items %}
+    {% if request.user.is_superuser or request.user.role == "admin" %}
+    <a href="{% url 'accounts:admin_dashboard' %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+    {% endif %}
 
-<a href="{% url 'accounts:admin_dashboard' %}">
-<i class="bi bi-speedometer2"></i> Dashboard
-</a>
+    {% if request.user.role == "staff" %}
+    <a href="{% url 'accounts:staff_dashboard' %}">
+        <i class="bi bi-speedometer2"></i> Staff Dashboard
+    </a>
+    {% endif %}
 
-{% endif %}
+    {% if not request.user.is_superuser and request.user.role == "policyholder" %}
+    <a href="{% url 'accounts:policyholder_dashboard' %}">
+        <i class="bi bi-house"></i> Dashboard
+    </a>
+    {% endif %}
 
-{% if request.user.role == "staff" %}
+    <a href="{% url 'policy:list' %}">
+        <i class="bi bi-file-earmark-text"></i> Policies
+    </a>
 
-<a href="{% url 'accounts:staff_dashboard' %}">
-<i class="bi bi-speedometer2"></i> Staff Dashboard
-</a>
+    <a href="{% url 'claim:list' %}">
+        <i class="bi bi-shield-exclamation"></i> Claims
+    </a>
 
-{% endif %}
+    {% if request.user.role != "admin" %}
+    <a href="{% url 'claim:create' %}">
+        <i class="bi bi-plus-circle"></i> File Claim
+    </a>
+    {% endif %}
 
-{% if not request.user.is_superuser and request.user.role == "policyholder" %}
-
-<a href="{% url 'accounts:policyholder_dashboard' %}">
-<i class="bi bi-house"></i> Dashboard
-</a>
-
-{% endif %}
-
-<a href="{% url 'policy:list' %}">
-<i class="bi bi-file-earmark-text"></i> Policies
-</a>
-
-<a href="{% url 'claim:list' %}">
-<i class="bi bi-shield-exclamation"></i> Claims
-</a>
-
-{% if request.user.role != "admin" %}
-<a href="{% url 'claim:create' %}">
-<i class="bi bi-plus-circle"></i> File Claim
-</a>
-{% endif %}
-
-<a href="{% url 'accounts:logout' %}" class="sidebar-logout">
-<i class="bi bi-box-arrow-right"></i> Logout
-</a>
+    <a href="{% url 'accounts:logout' %}" class="sidebar-logout">
+        <i class="bi bi-box-arrow-right"></i> Logout
+    </a>
+    {% endblock %}
 
 </div>
 

@@ -68,21 +68,14 @@ def claim_submit(request):
         policy = get_object_or_404(Policy, id=policy_id)
 
         claim = Claim.objects.create(
-
             policy=policy,
-
             claim_number=f"CLM-{int(timezone.now().timestamp())}",
-
             claim_type=request.POST.get("claim_type"),
-
+            status="submitted",
             incident_date=request.POST.get("incident_date"),
-
             description=request.POST.get("description"),
-
             claimed_amount=Decimal(request.POST.get("claimed_amount")),
-
-            deductible_amount=Decimal(request.POST.get("deductible_amount", 0)),
-
+            deductible_amount=policy.deductible,
             created_by=request.user
         )
 
@@ -269,6 +262,16 @@ def update_claim_status(request, id):
         status = request.POST.get("status")
 
         claim.status = status
+
+        # Save staff verification fields if submitted
+        if request.POST.get("policy_validity"):
+            claim.policy_validity = request.POST.get("policy_validity")
+            claim.document_verification = request.POST.get("document_verification")
+            claim.amount_verification = request.POST.get("amount_verification")
+            claim.staff_comments = request.POST.get("assessment_comments")
+            
+            if request.POST.get("recommended_amount"):
+                claim.recommended_amount = Decimal(request.POST.get("recommended_amount"))
 
         if request.user.is_admin or request.user.role == 'staff':
             claim.assigned_to = request.user

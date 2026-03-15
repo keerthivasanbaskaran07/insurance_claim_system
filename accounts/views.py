@@ -51,14 +51,16 @@ def admin_dashboard(request):
 
     total_policies = Policy.objects.count()
     total_claims = Claim.objects.count()
-    pending_claims = Claim.objects.filter(status__in=["submitted", "under_review"]).count()
+    # Admin only sees claims forwarded into "Investigation" by the Staff
+    pending_claims = Claim.objects.filter(status="investigation").count()
     approved_claims = Claim.objects.filter(status="approved").count()
     rejected_claims = Claim.objects.filter(status="rejected").count()
 
     total_staffs = User.objects.filter(role="staff").count()
     total_premium = Policy.objects.aggregate(total=Sum('premium'))['total'] or 0
 
-    recent_claims = Claim.objects.all().order_by('-created_at')[:5]
+    # Filter recent claims to exclude raw "submitted" or "under_review" items
+    recent_claims = Claim.objects.filter(status__in=["investigation", "approved", "rejected", "settled"]).order_by('-created_at')[:5]
     recent_policies = Policy.objects.all().order_by('-created_at')[:5]
 
     context = {
@@ -79,8 +81,54 @@ def admin_dashboard(request):
 
 @login_required
 def staff_dashboard(request):
+    claims = Claim.objects.all()
+    pending_claims = claims.filter(status__in=["submitted", "under_review"])
+    recent_claims = claims.order_by('-created_at')[:5]
+    
+    # KPI metrics
+    total_claims = claims.count()
+    submitted_claims = claims.filter(status="submitted").count()
+    approved_claims = claims.filter(status="approved").count()
+    
+    kpi = {
+        'total_claims': total_claims,
+        'submitted_claims': submitted_claims,
+        'approved_claims': approved_claims,
+    }
 
-    return render(request, "accounts/dashboard_staff.html")
+    # Claim status summary calculations
+    total_claims_count = claims.count()
+    status_counts = claims.values('status').annotate(count=Count('id'))
+    
+    claim_status_summary = []
+    for s in status_counts:
+        status = s['status']
+        count = s['count']
+        pct = (count / total_claims_count * 100) if total_claims_count > 0 else 0
+        
+        bar_class = 'bg-secondary'
+        if status in ['approved', 'settled']: bar_class = 'bg-success'
+        elif status in ['under_review', 'investigation']: bar_class = 'bg-warning'
+        elif status == 'submitted': bar_class = 'bg-primary'
+        elif status == 'rejected': bar_class = 'bg-danger'
+        
+        claim_status_summary.append({
+            'label': status.replace('_', ' ').title(),
+            'count': count,
+            'percentage': pct,
+            'bar_class': bar_class
+        })
+
+    context = {
+        'claims': claims,
+        'kpi': kpi,
+        'pending_claims': pending_claims,
+        'recent_claims': recent_claims,
+        'claim_status_summary': claim_status_summary,
+    }
+
+    return render(request, "accounts/dashboard_staff.html", context)
+
 
 
 @login_required

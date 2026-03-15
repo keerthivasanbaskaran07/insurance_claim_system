@@ -330,13 +330,12 @@ class="btn btn-sm btn-outline-secondary">
 
 </a>
 
-<a href="{% url 'claim:edit' claim.pk %}"
-
-class="btn btn-sm btn-outline-primary">
-
-<i class="bi bi-pencil"></i>
-
-</a>
+                                {% if request.user.role == 'policyholder' %}
+                                <a href="{% url 'claim:edit' claim.pk %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
 
 {% if request.user.is_admin %}
 

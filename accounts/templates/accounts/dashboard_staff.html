@@ -1,274 +1,657 @@
 {% extends "base.html" %}
 {% load humanize %}
 
-{% block title %}Staff Dashboard{% endblock %}
+{% block title %}Staff Dashboard — InsureCRM{% endblock %}
+
+{% block sidebar_items %}
+<a href="#" class="sidebar-link active" onclick="switchView('dashboard', this)">
+    <i class="bi bi-speedometer2"></i> Dashboard
+</a>
+<a href="#" class="sidebar-link" onclick="switchView('claims', this)">
+    <i class="bi bi-shield-check"></i> Claims Review
+</a>
+<a href="#" class="sidebar-link" onclick="switchView('assessment', this)">
+    <i class="bi bi-clipboard-pulse"></i> Assessment Details
+</a>
+<a href="#" class="sidebar-link" onclick="switchView('policies', this)">
+    <i class="bi bi-file-earmark-text"></i> Policy Information
+</a>
+<a href="#" class="sidebar-link" onclick="switchView('reports', this)">
+    <i class="bi bi-graph-up-arrow"></i> Reports
+</a>
+<hr class="my-3" style="border-color: rgba(255,255,255,0.08);">
+<a href="{% url 'accounts:logout' %}" class="sidebar-logout">
+    <i class="bi bi-box-arrow-right"></i> Logout
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Global Section Container */
+    .view-section {
+        animation: fadeIn 0.4s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Glassmorphic Dashboard Cards */
+    .dashboard-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+        border-color: rgba(26, 110, 245, 0.3);
+    }
+    
+    .card-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+
+    /* Soft Highlights for metrics */
+    .bg-soft-primary { background: rgba(26, 110, 245, 0.12); color: #1a6ef5; }
+    .bg-soft-warning { background: rgba(255, 193, 7, 0.12); color: #ffc107; }
+    .bg-soft-success { background: rgba(0, 198, 100, 0.12); color: #00c664; }
+    .bg-soft-info { background: rgba(13, 202, 240, 0.12); color: #0dcaf0; }
+
+    /* Tables */
+    .table-container {
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Sidebar link Active state override */
+    .sidebar-link.active {
+        background: rgba(26, 110, 245, 0.15) !important;
+        color: white !important;
+        border-left: 3px solid #1a6ef5 !important;
+        padding-left: 24px !important;
+    }
+
+    /* Custom doc view */
+    .doc-group-header {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #7a8ba8;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+    }
+    .doc-item-row {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* Graph Bars Simulation */
+    .bar-chart-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .bar-line {
+        height: 12px;
+        border-radius: 6px;
+        background: #1a6ef5;
+        transition: width 1s ease;
+    }
+    /* Custom Dropdown Option fixes for Dark Mode */
+    .form-select option {
+        background-color: #111c35; /* Matches sidebar/cards theme */
+        color: white;
+    }
+    .form-control:focus, .form-select:focus {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-color: #1a6ef5;
+        box-shadow: 0 0 0 0.25rem rgba(26, 110, 245, 0.15);
+        color: white;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="container-fluid p-0">
 
-<div class="container mt-4">
+    <!-- ============================================== -->
+    <!-- 1. DASHBOARD VIEW (Summary & Tables)           -->
+    <!-- ============================================== -->
+    <div id="view-dashboard" class="view-section">
+        
+        <!-- Welcome Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="mb-1 text-white">Review dashboard index</h4>
+                <p class="text-muted mb-0">Track claim statistics and current files waiting for assessment.</p>
+            </div>
+            <div class="text-muted small">
+                <i class="bi bi-calendar3 me-1"></i> {% now "F d, Y" %}
+            </div>
+        </div>
 
-<!-- HEADER -->
+        <!-- 1. Dashboard Summary Cards -->
+        <div class="row g-4 mb-4">
+            <!-- Total Claims Submitted -->
+            <div class="col-md-3">
+                <div class="dashboard-card p-4">
+                    <div class="card-icon bg-soft-primary"><i class="bi bi-journal-check"></i></div>
+                    <h6 class="text-muted small">Total Claims Submitted</h6>
+                    <h3 class="mb-0 fw-bold">{{ kpi.total_claims|default:0 }}</h3>
+                </div>
+            </div>
+            <!-- Pending Claims -->
+            <div class="col-md-3">
+                <div class="dashboard-card p-4">
+                    <div class="card-icon bg-soft-warning"><i class="bi bi-hourglass-split"></i></div>
+                    <h6 class="text-muted small">Pending Claims</h6>
+                    <h3 class="mb-0 fw-bold">{{ pending_claims|length }}</h3>
+                </div>
+            </div>
+            <!-- Claims Under Review -->
+            <div class="col-md-3">
+                <div class="dashboard-card p-4">
+                    <div class="card-icon bg-soft-info"><i class="bi bi-search"></i></div>
+                    <h6 class="text-muted small">Claims Under Review</h6>
+                    <h3 class="mb-0 fw-bold">
+                        {% for item in claim_status_summary %}
+                            {% if item.label|lower == "under review" %}{{ item.count }}{% endif %}
+                        {% empty %}0{% endfor %}
+                    </h3>
+                </div>
+            </div>
+            <!-- Claims Forwarded to Admin -->
+            <div class="col-md-3">
+                <div class="dashboard-card p-4">
+                    <div class="card-icon bg-soft-success"><i class="bi bi-arrow-up-right-square"></i></div>
+                    <h6 class="text-muted small">Forwarded to Admin</h6>
+                    <h3 class="mb-0 fw-bold">{{ kpi.approved_claims|default:0 }}</h3>
+                </div>
+            </div>
+        </div>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+        <!-- 2. Claims Waiting for Review Table -->
+        <div class="table-container mb-4">
+            <h5 class="mb-4 text-white"><i class="bi bi-table me-2"></i>Claims Waiting for Review</h5>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Claim Number</th>
+                            <th>Policy Holder Name</th>
+                            <th>Policy Number</th>
+                            <th>Policy Type</th>
+                            <th>Claim Amount</th>
+                            <th>Submission Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for claim in claims %}
+                        <tr>
+                            <td class="fw-medium">{{ claim.claim_number }}</td>
+                            <td>{{ claim.policy.holder.user.get_full_name|default:claim.policy.holder.user.username }}</td>
+                            <td>{{ claim.policy.policy_number }}</td>
+                            <td>{{ claim.policy.policy_type|default:"N/A" }}</td>
+                            <td>₹{{ claim.claimed_amount|intcomma }}</td>
+                            <td>{{ claim.reported_date|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="badge {% if claim.status == 'submitted' %}bg-primary{% elif claim.status == 'under_review' %}bg-warning text-dark{% elif claim.status == 'approved' %}bg-success{% elif claim.status == 'rejected' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                    {{ claim.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm" onclick="reviewClaim('{{ claim.id }}')">
+                                    Review Claim
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8" class="text-center text-muted py-4">No waiting files.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-<div>
-<h3>Welcome {{ request.user.username }}</h3>
-<p class="text-muted">Staff Claim Management Dashboard</p>
+        <!-- 6. Recent Reviewed Claims Section -->
+        <div class="table-container">
+            <h5 class="mb-4 text-white"><i class="bi bi-clock-history me-2"></i>Recent Reviewed Claims</h5>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Claim Number</th>
+                            <th>Policy Holder</th>
+                            <th>Claim Amount</th>
+                            <th>Staff Comment</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for claim in recent_claims %}
+                        <tr>
+                            <td class="fw-medium">{{ claim.claim_number }}</td>
+                            <td>{{ claim.policy.holder.user.get_full_name|default:claim.policy.holder.user.username }}</td>
+                            <td>₹{{ claim.claimed_amount|intcomma }}</td>
+                            <td>
+                                <span class="text-muted small">
+                                    {{ claim.assessment.remarks|default:"Completed review verification."|truncatewords:8 }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {{ claim.status }}">
+                                    {{ claim.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">No recent history logs.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div> <!-- End Dashboard View -->
+
+    <!-- ============================================== -->
+    <!-- 2. CLAIMS REVIEW VIEW                          -->
+    <!-- ============================================== -->
+    <div id="view-claims" class="view-section" style="display: none;">
+        <div class="table-container">
+            <h5 class="mb-4 text-white"><i class="bi bi-shield-check me-2"></i>Claims Waiting for Review</h5>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Claim Number</th>
+                            <th>Policy Holder Name</th>
+                            <th>Policy Number</th>
+                            <th>Policy Type</th>
+                            <th>Claim Amount</th>
+                            <th>Submission Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for claim in claims %}
+                        <tr>
+                            <td class="fw-medium">{{ claim.claim_number }}</td>
+                            <td>{{ claim.policy.holder.user.get_full_name|default:claim.policy.holder.user.username }}</td>
+                            <td>{{ claim.policy.policy_number }}</td>
+                            <td>{{ claim.policy.policy_type|default:"N/A" }}</td>
+                            <td>₹{{ claim.claimed_amount|intcomma }}</td>
+                            <td>{{ claim.reported_date|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="badge {% if claim.status == 'submitted' %}bg-primary{% elif claim.status == 'under_review' %}bg-warning text-dark{% elif claim.status == 'approved' %}bg-success{% elif claim.status == 'rejected' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                    {{ claim.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm" onclick="reviewClaim('{{ claim.id }}')">
+                                    Review Claim
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8" class="text-center text-muted py-4">No waiting files.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 3. CLAIM REVIEW PAGE (Sub-pane)                -->
+    <!-- ============================================== -->
+    <div id="view-review" class="view-section" style="display: none;">
+        <div class="mb-4">
+            <button class="btn btn-secondary btn-sm" onclick="switchView('dashboard')">
+                <i class="bi bi-arrow-left me-1"></i> Back to Review List
+            </button>
+        </div>
+        <div id="review-content-placeholder"></div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 3B. ASSESSMENT DETAILS SCREEN (New Sidebar)    -->
+    <!-- ============================================== -->
+    <div id="view-assessment" class="view-section" style="display: none;">
+        <div class="table-container mb-4">
+            <h5 class="mb-4 text-white"><i class="bi bi-clipboard-pulse me-2"></i>Assessment Workspace</h5>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Claim Number</th>
+                            <th>Policy Holder</th>
+                            <th>Claim Amount</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for claim in claims %}
+                        <!-- Only show claims submitted or under review for assessment work lists -->
+                        {% if claim.status == 'submitted' or claim.status == 'under_review' %}
+                        <tr>
+                            <td class="fw-medium">{{ claim.claim_number }}</td>
+                            <td>{{ claim.policy.holder.user.get_full_name|default:claim.policy.holder.user.username }}</td>
+                            <td>₹{{ claim.claimed_amount|intcomma }}</td>
+                            <td>
+                                <span class="badge {% if claim.status == 'submitted' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+                                    {{ claim.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="reviewClaim('{{ claim.id }}')">
+                                    Assess Claim
+                                </button>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% empty %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 4. POLICY INFORMATION SCREEN (MOCK / LOOPED)  -->
+    <!-- ============================================== -->
+    <div id="view-policies" class="view-section" style="display: none;">
+        <div class="d-flex justify-content-between mb-4">
+            <h5 class="text-white mb-0">Policy Inventory Information</h5>
+            <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary w-25" placeholder="Search policies...">
+        </div>
+        <div class="row g-3">
+            {% for claim in pending_claims %}
+            <div class="col-md-4">
+                <div class="dashboard-card p-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="badge active">{{ claim.policy.status|upper }}</span>
+                        <small class="text-muted">{{ claim.policy.insurer_name|default:"General Insurer" }}</small>
+                    </div>
+                    <h5 class="text-white">{{ claim.policy.policy_number }}</h5>
+                    <p class="text-muted small mb-2">{{ claim.policy.policy_type|default:"N/A" }}</p>
+                    <div class="border-top pt-2 mt-2 border-secondary d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-success">₹{{ claim.policy.sum_insured|intcomma }}</span>
+                        <a href="#" class="btn btn-sm btn-outline-light py-0 px-2" style="font-size:11px;">View Core File</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center text-muted">No policies available or loaded.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 5. REPORTS SCREEN (MOCK / VISUALS)             -->
+    <!-- ============================================== -->
+    <div id="view-reports" class="view-section" style="display: none;">
+        <h5 class="text-white mb-4">Analytics & Reports summary</h5>
+        <div class="row g-4">
+            <div class="col-md-8">
+                <div class="dashboard-card p-4 h-100">
+                    <h6 class="text-white mb-3">Claim Distributions (Monthly Volume)</h6>
+                    <div class="bar-chart-item">
+                        <span class="text-muted small col-2">Jan</span>
+                        <div class="col-9"><div class="bar-line" style="width: 45%;"></div></div>
+                        <span class="small ps-2">45</span>
+                    </div>
+                    <div class="bar-chart-item">
+                        <span class="text-muted small col-2">Feb</span>
+                        <div class="col-9"><div class="bar-line bg-warning" style="width: 70%;"></div></div>
+                        <span class="small ps-2">70</span>
+                    </div>
+                    <div class="bar-chart-item">
+                        <span class="text-muted small col-2">Mar</span>
+                        <div class="col-9"><div class="bar-line bg-success" style="width: 85%;"></div></div>
+                        <span class="small ps-2">85</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card p-4 h-100 d-flex flex-column justify-content-center text-center">
+                    <h1 class="text-success fw-bold">92%</h1>
+                    <h6 class="text-white">Review Efficiency Rate</h6>
+                    <p class="text-muted small">Forwarded assessments confirmed as valid by Admin files.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<a href="{% url 'claim:list' %}" class="btn btn-dark">
-View All Claims
-</a>
+<!-- ============================================== -->
+<!-- HIDDEN DATA SOURCE FOR REVIEW SPREADSHEETS     -->
+<!-- ============================================== -->
+{% for claim in claims %}
+<div id="claim-details-{{ claim.id }}" class="d-none">
+    
+    <!-- Title Page -->
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 border-secondary">
+        <div>
+            <h4 class="mb-1 text-white">Reviewing File: {{ claim.claim_number }}</h4>
+            <p class="text-muted mb-0 small">Policyholder: {{ claim.policy.holder.user.get_full_name|default:claim.policy.holder.user.username }}</p>
+        </div>
+        <span class="badge bg-soft-warning px-3 py-2 text-warning fw-bold">Pending Review</span>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- 3. Policy Information Panel -->
+        <div class="col-md-6">
+            <div class="dashboard-card p-4 h-100">
+                <h6 class="mb-3 text-info"><i class="bi bi-file-earmark-lock me-2"></i>Policy Information</h6>
+                <div class="row g-2 small">
+                    <div class="col-5 text-muted">Policy Number:</div><div class="col-7 fw-medium text-white">{{ claim.policy.policy_number }}</div>
+                    <div class="col-5 text-muted">Policy Type:</div><div class="col-7">{{ claim.policy.policy_type|default:"N/A" }}</div>
+                    <div class="col-5 text-muted">Sum Insured:</div><div class="col-7 fw-bold text-success">₹{{ claim.policy.sum_insured|intcomma }}</div>
+                    <div class="col-5 text-muted">Policy Validity:</div>
+                    <div class="col-7">{{ claim.policy.start_date|date:"D d, Y" }} — {{ claim.policy.end_date|date:"D d, Y" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Claim Information Panel -->
+        <div class="col-md-6">
+            <div class="dashboard-card p-4 h-100">
+                <h6 class="mb-3 text-warning"><i class="bi bi-shield-fill-exclamation me-2"></i>Claim Information</h6>
+                <div class="row g-2 small">
+                    <div class="col-5 text-muted">Claim Number:</div><div class="col-7 fw-medium text-white">{{ claim.claim_number }}</div>
+                    <div class="col-5 text-muted">Claim Type:</div><div class="col-7">{{ claim.get_claim_type_display }}</div>
+                    <div class="col-5 text-muted">Claim Amount:</div><div class="col-7 fw-bold text-warning">₹{{ claim.claimed_amount|intcomma }}</div>
+                    <div class="col-5 text-muted">Incident Date:</div><div class="col-7">{{ claim.incident_date|date:"M d, Y" }}</div>
+                    <div class="col-5 text-muted">Claim Description:</div>
+                    <div class="col-7"><p class="mb-0 text-muted">{{ claim.description|default:"No description offered." }}</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Uploaded Documents Checklists mapping targets specs -->
+    <div class="dashboard-card p-4 mb-4">
+        <h6 class="mb-3 text-white"><i class="bi bi-paperclip me-2"></i>Uploaded Documents Verification</h6>
+        <div class="row g-3">
+            
+            <!-- Type A: Hospital Bills -->
+            <div class="col-6">
+                <div class="doc-group-header">Hospital Bills</div>
+                {% for doc in claim.documents.all %}{% if doc.document_type == "hospital_bill" %}
+                    <div class="doc-item-row"><span><i class="bi bi-file-medical-fill me-2 text-danger"></i> {{ doc.description|default:"Bill file" }}</span><a href="{{ doc.file.url }}" target="_blank" class="badge bg-light text-dark text-decoration-none">View</a></div>
+                {% endif %}{% empty %}{% endfor %}
+                <p class="text-muted small"><i class="bi bi-exclamation-circle me-1"></i> Checked from general stack if files aren't tagged statically items listed.</p>
+            </div>
+
+            <!-- Type B: Accident Report -->
+            <div class="col-6">
+                <div class="doc-group-header">Accident Report</div>
+                <p class="text-muted small">No specialized Accident Report files found.</p>
+            </div>
+
+            <!-- Type C: Medical Reports -->
+            <div class="col-6">
+                <div class="doc-group-header">Medical Reports</div>
+                {% for doc in claim.documents.all %}{% if doc.document_type == "medical_report" %}
+                    <div class="doc-item-row"><span><i class="bi bi-file-earmark-pdf me-2 text-info"></i> {{ doc.description|default:"Report file" }}</span><a href="{{ doc.file.url }}" target="_blank" class="badge bg-light text-dark text-decoration-none">View</a></div>
+                {% endif %}{% empty %}{% endfor %}
+            </div>
+
+            <!-- Type D: Identity Proof -->
+            <div class="col-6">
+                <div class="doc-group-header">Identity Proof</div>
+                {% for doc in claim.documents.all %}{% if doc.document_type == "id_proof" %}
+                    <div class="doc-item-row"><span><i class="bi bi-person-bounding-box me-2 text-success"></i> Account ID Proof</span><a href="{{ doc.file.url }}" target="_blank" class="badge bg-light text-dark text-decoration-none">View</a></div>
+                {% endif %}{% empty %}{% endfor %}
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- PRE-SUBMISSION VERIFICATION & ASSESSMENT       -->
+    <!-- ============================================== -->
+    <form action="{% url 'claim:update_status' claim.id %}" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="investigation">
+
+        <!-- 4. Staff Verification Section -->
+        <div class="dashboard-card p-4 mb-4">
+            <h6 class="mb-3 text-white"><i class="bi bi-check2-circle me-2"></i>Staff Verification Section</h6>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label text-muted small">Policy Validity</label>
+                    <select name="staff_policy_validity" class="form-select bg-transparent text-white border-secondary" required>
+                        <option value="">Select verification status...</option>
+                        <option value="valid">Policy is Valid & Active</option>
+                        <option value="invalid">Lapsed / Lacks Coverage</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted small">Document Verification</label>
+                    <select name="staff_document_verification" class="form-select bg-transparent text-white border-secondary" required>
+                        <option value="">Select verification status...</option>
+                        <option value="verified">All Files Received & Legit</option>
+                        <option value="missing">Missing Required Docs</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted small">Claim Amount Verification</label>
+                    <select name="staff_amount_verification" class="form-select bg-transparent text-white border-secondary" required>
+                        <option value="">Select verification status...</option>
+                        <option value="verified">Verified Accurate</option>
+                        <option value="audit">Under-assessment Discrepancies</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label text-muted small">Staff Comments</label>
+                    <textarea class="form-control bg-transparent text-white border-secondary" rows="3" name="staff_comments" placeholder="Include review summary remarks here..." required></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Claim Assessment Section -->
+        <div class="dashboard-card p-4">
+            <h6 class="mb-3 text-white"><i class="bi bi-clipboard2-check me-2"></i>Claim Assessment</h6>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label text-muted small">Policy Validity</label>
+                    <select name="policy_validity" class="form-select bg-transparent text-white border-secondary" required>
+                        <option value="">Select option...</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted small">Document Verification</label>
+                    <select name="document_verification" class="form-select bg-transparent text-white border-secondary" required>
+                        <option value="">Select option...</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted small">Damage/Medical Verification</label>
+                    <select name="amount_verification" class="form-select bg-transparent text-white border-secondary" required>
+                        <option value="">Select option...</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                
+                <div class="col-12">
+                    <label class="form-label text-muted small">Recommended Claim Amount (₹)</label>
+                    <input type="number" name="recommended_amount" class="form-control bg-transparent text-white border-secondary" placeholder="₹45000" step="0.01" required>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label text-muted small">Staff Assessment Notes</label>
+                    <textarea class="form-control bg-transparent text-white border-secondary" rows="3" name="assessment_comments" placeholder="Include review summary remarks here..." required></textarea>
+                </div>
+                <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                    <button type="button" class="btn btn-outline-secondary" onclick="switchView('dashboard')">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4">
+                        <i class="bi bi-check-all me-1"></i> Submit Assessment and Forward to Admin
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
 
 </div>
-
-
-<!-- KPI CARDS -->
-
-<div class="row g-3 mb-4">
-
-<div class="col-md-3">
-<div class="card shadow-sm">
-<div class="card-body">
-
-<h6 class="text-muted">Total Claims</h6>
-<h3>{{ kpi.total_claims }}</h3>
-
-</div>
-</div>
-</div>
-
-
-<div class="col-md-3">
-<div class="card shadow-sm">
-<div class="card-body">
-
-<h6 class="text-muted">Submitted Claims</h6>
-<h3>{{ kpi.submitted_claims }}</h3>
-
-</div>
-</div>
-</div>
-
-
-<div class="col-md-3">
-<div class="card shadow-sm">
-<div class="card-body">
-
-<h6 class="text-muted">Approved Claims</h6>
-<h3 class="text-success">{{ kpi.approved_claims }}</h3>
-
-</div>
-</div>
-</div>
-
-
-<div class="col-md-3">
-<div class="card shadow-sm">
-<div class="card-body">
-
-<h6 class="text-muted">Rejected Claims</h6>
-<h3 class="text-danger">{{ kpi.rejected_claims }}</h3>
-
-</div>
-</div>
-</div>
-
-</div>
-
-
-
-<!-- CLAIM STATUS SUMMARY -->
-
-<div class="card shadow-sm mb-4">
-
-<div class="card-header">
-<h5>Claims by Status</h5>
-</div>
-
-<div class="card-body">
-
-{% for item in claim_status_summary %}
-
-<div class="mb-2">
-
-<div class="d-flex justify-content-between">
-
-<span>{{ item.label }}</span>
-
-<span>{{ item.count }}</span>
-
-</div>
-
-<div class="progress">
-
-<div class="progress-bar {{ item.bar_class }}"
-style="width: {{ item.percentage|default:0 }}%;"></div>
-
-</div>
-
-</div>
-
-{% empty %}
-
-<p class="text-muted">No claim data available</p>
-
 {% endfor %}
 
-</div>
+{% endblock %}
 
-</div>
+{% block extra_js %}
+<script>
+    function switchView(viewName, element) {
+        if (element) {
+            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+            element.classList.add('active');
+        }
 
+        document.querySelectorAll('.view-section').forEach(sec => sec.style.display = 'none');
+        
+        const target = document.getElementById('view-' + viewName);
+        if (target) target.style.display = 'block';
+    }
 
-
-<!-- RECENT CLAIMS -->
-
-<div class="card shadow-sm mb-4">
-
-<div class="card-header">
-<h5>Recent Claims</h5>
-</div>
-
-<div class="card-body">
-
-<table class="table table-bordered table-hover">
-
-<thead>
-
-<tr>
-<th>Claim No</th>
-<th>Policy</th>
-<th>Claim Type</th>
-<th>Claimed Amount</th>
-<th>Status</th>
-</tr>
-
-</thead>
-
-<tbody>
-
-{% for claim in recent_claims %}
-
-<tr>
-
-<td>
-<a href="{% url 'claim:detail' claim.id %}">
-{{ claim.claim_number }}
-</a>
-</td>
-
-<td>{{ claim.policy.policy_number }}</td>
-
-<td>{{ claim.get_claim_type_display }}</td>
-
-<td>₹{{ claim.claimed_amount|default:0|intcomma }}</td>
-
-<td>
-
-<span class="badge
-{% if claim.status == "submitted" %}
-bg-primary
-{% elif claim.status == "under_review" %}
-bg-warning
-{% elif claim.status == "approved" %}
-bg-success
-{% elif claim.status == "rejected" %}
-bg-danger
-{% else %}
-bg-secondary
-{% endif %}
-">
-
-{{ claim.get_status_display }}
-
-</span>
-
-</td>
-
-</tr>
-
-{% empty %}
-
-<tr>
-<td colspan="5" class="text-center">No claims available</td>
-</tr>
-
-{% endfor %}
-
-</tbody>
-
-</table>
-
-</div>
-
-</div>
-
-
-
-<!-- PENDING CLAIMS -->
-
-<div class="card shadow-sm">
-
-<div class="card-header">
-<h5>Pending Claims for Review</h5>
-</div>
-
-<div class="card-body">
-
-<table class="table table-bordered table-hover">
-
-<thead>
-
-<tr>
-<th>Claim Number</th>
-<th>Policyholder</th>
-<th>Claim Type</th>
-<th>Amount</th>
-<th>Action</th>
-</tr>
-
-</thead>
-
-<tbody>
-
-{% for claim in pending_claims %}
-
-<tr>
-
-<td>{{ claim.claim_number }}</td>
-
-<td>{{ claim.policy.holder }}</td>
-
-<td>{{ claim.get_claim_type_display }}</td>
-
-<td>₹{{ claim.claimed_amount|intcomma }}</td>
-
-<td>
-
-<a href="{% url 'claim:detail' claim.id %}" class="btn btn-sm btn-primary">
-Review
-</a>
-
-</td>
-
-</tr>
-
-{% empty %}
-
-<tr>
-<td colspan="5" class="text-center">No pending claims</td>
-</tr>
-
-{% endfor %}
-
-</tbody>
-
-</table>
-
-</div>
-
-</div>
-
-</div>
-
+    function reviewClaim(claimId) {
+        switchView('review');
+        const sourceHtml = document.getElementById('claim-details-' + claimId).innerHTML;
+        document.getElementById('review-content-placeholder').innerHTML = sourceHtml;
+        
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            if (link.innerText.includes('Claims Review')) link.classList.add('active');
+            else link.classList.remove('active');
+        });
+    }
+</script>
 {% endblock %}
